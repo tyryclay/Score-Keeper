@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!-- viewport-fit=cover → content fills behind Dynamic Island / notch -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1F3658">
+<title>🎮 Game Night Tracker</title>
+<style>
+
+/* ── RESET ──────────────────────────────────────────────
+   CRITICAL: Do NOT set overflow:hidden on html or body.
+   On iOS Safari this breaks position:sticky and prevents
+   the page from scrolling at all.
+   ─────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+* { -webkit-tap-highlight-color: transparent; }
+button {
+  touch-action: manipulation;
+  -webkit-user-select: none; user-select: none;
+  border: none; cursor: pointer; background: none;
+}
+
+/* ── BASE ───────────────────────────────────────────────
+   -webkit-fill-available fixes 100vh including browser chrome on iOS
+   ─────────────────────────────────────────────────────── */
+html { height: -webkit-fill-available; }
+body {
+  font-family: -apple-system, 'SF Pro Text', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--txt);
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  transition: background .35s ease;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* ── THEMES ─────────────────────────────────────────────── */
+:root {
+  --bg:#172845; --surf:#1F3658; --surf2:#28446C;
+  --acc:#38BDF8; --fg:#00111F;
+  --txt:#EEF5FF; --muted:#7095BC; --bdr:#2C4E72;
+  --gold:#F59E0B; --adim:rgba(56,189,248,.4);
+}
+body.t-flip7 {
+  --bg:#1E1640; --surf:#281E52; --surf2:#332664;
+  --acc:#FF5722; --fg:#FFFFFF;
+  --txt:#F0E8FF; --muted:#7A5AAA; --bdr:#3E2E72;
+  --gold:#FFB300; --adim:rgba(255,87,34,.4);
+  background-image: repeating-linear-gradient(
+    -45deg, rgba(255,87,34,.025) 0, rgba(255,87,34,.025) 1px,
+    transparent 1px, transparent 28px);
+}
+body.t-farkle {
+  --bg:#1E0A0A; --surf:#2C1010; --surf2:#3A1515;
+  --acc:#DC2020; --fg:#FFE8E0;
+  --txt:#F5E4D8; --muted:#9A5555; --bdr:#502020;
+  --gold:#D4A020; --adim:rgba(220,32,32,.4);
+  background-image: radial-gradient(circle, rgba(180,20,20,.1) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+body.t-phase10 {
+  --bg:#0A2468; --surf:#0E2E84; --surf2:#123898;
+  --acc:#FFD700; --fg:#08184A;
+  --txt:#E8F0FF; --muted:#6080C8; --bdr:#1848B8;
+  --gold:#FFD700; --adim:rgba(255,215,0,.4);
+  background-image: linear-gradient(rgba(255,215,0,.022) 1px, transparent 1px);
+  background-size: 100% 48px;
+}
+
+/* ── TAB BAR ────────────────────────────────────────────
+   env(safe-area-inset-top) pads below Dynamic Island in PWA mode.
+   -webkit-sticky required for iOS 12 and below.
+   ─────────────────────────────────────────────────────── */
+#tabs {
+  display: flex;
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--surf);
+  border-bottom: 2px solid var(--bdr);
+  padding-top: env(safe-area-inset-top, 0px);
+  transition: background .35s, border-color .35s;
+}
+.tab {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 3px; padding: 11px 4px 10px;
+  background: transparent; color: var(--muted);
+  font-family: inherit; font-size: 10px; font-weight: 600;
+  letter-spacing: .06em;
+  transition: background .15s, color .15s;
+  min-height: 56px;
+  touch-action: manipulation;
+}
+.tab .ico { font-size: 21px; line-height: 1; }
+.tab.on   { background: var(--acc); color: var(--fg); font-weight: 900; }
+.tab:active:not(.on) { background: rgba(255,255,255,.1); }
+
+/* ── MAIN CONTENT ───────────────────────────────────────── */
+#app {
+  padding: 16px;
+  /* extra bottom padding for home-bar safe area */
+  padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px));
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+/* ── BRAND HEADERS ──────────────────────────────────────── */
+.brand {
+  border-radius: 16px; padding: 22px 18px 18px; margin-bottom: 18px;
+  text-align: center; position: relative; overflow: hidden;
+}
+/* Flip 7 */
+.b-flip7 {
+  background: linear-gradient(145deg, #261848 0%, #32205E 60%, #2A1C52 100%);
+  border: 1px solid #4A2E80;
+}
+.b-flip7::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse 90% 60% at 50% 100%, rgba(255,87,34,.22) 0%, transparent 70%);
+}
+.f7-main  { display: flex; align-items: center; justify-content: center; gap: 12px; position: relative; }
+.f7-flip  { font-size: 40px; font-weight: 900; font-style: italic; color: #fff; letter-spacing: .06em; text-shadow: 2px 2px 12px rgba(0,0,0,.6); }
+.f7-card  { width: 52px; height: 68px; background: linear-gradient(160deg, #FF5E10, #E03000); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 38px; font-weight: 900; color: #fff; box-shadow: 0 4px 18px rgba(255,77,0,.65); transform: rotate(-5deg); flex-shrink: 0; }
+.f7-row   { display: flex; justify-content: center; gap: 5px; margin-top: 12px; position: relative; flex-wrap: wrap; }
+.f7-pip   { width: 30px; height: 40px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 15px; color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.45); }
+/* Farkle */
+.b-farkle {
+  background: linear-gradient(145deg, #1A0606 0%, #280A0A 100%);
+  border: 1px solid #501010;
+}
+.b-farkle::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse 70% 55% at 50% 65%, rgba(10,80,20,.45) 0%, transparent 70%);
+}
+.fk-dice { font-size: 24px; letter-spacing: 8px; color: rgba(255,255,255,.75); position: relative; margin-bottom: 6px; }
+.fk-word { font-size: 52px; font-weight: 900; font-style: italic; letter-spacing: .14em; position: relative; color: #D4A824; text-shadow: 0 0 32px rgba(212,168,36,.65), 0 2px 4px rgba(0,0,0,.8); }
+/* Phase 10 */
+.b-p10 {
+  background: linear-gradient(145deg, #0C2878 0%, #103298 60%, #0C2878 100%);
+  border: 1px solid #1E4CC0;
+}
+.b-p10::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 75% 65% at 22% 50%, rgba(212,26,26,.28) 0%, transparent 55%),
+    radial-gradient(ellipse 75% 65% at 78% 50%, rgba(255,215,0,.18) 0%, transparent 55%);
+}
+.p10-main  { display: flex; align-items: baseline; justify-content: center; gap: 14px; position: relative; }
+.p10-phase { font-size: 34px; font-weight: 900; color: #E82020; letter-spacing: .12em; text-shadow: 0 2px 14px rgba(232,32,32,.5); }
+.p10-ten   { font-size: 72px; font-weight: 900; color: #FFD700; letter-spacing: -.03em; line-height: 1; text-shadow: 0 4px 22px rgba(255,215,0,.55); }
+.b-tag   { font-size: 10px; letter-spacing: .18em; text-transform: uppercase; margin-top: 10px; position: relative; color: rgba(255,255,255,.3); }
+.fk-tag  { font-size: 10px; letter-spacing: .18em; text-transform: uppercase; margin-top:  6px; position: relative; color: rgba(212,168,36,.4); }
+.p10-tag { font-size: 10px; letter-spacing: .18em; text-transform: uppercase; margin-top:  4px; position: relative; color: rgba(255,255,255,.28); }
+
+/* ── TYPOGRAPHY ─────────────────────────────────────────── */
+.pg-title  { font-size: 22px; font-weight: 900; letter-spacing: -.03em; }
+.pg-sub    { font-size: 13px; color: var(--muted); margin-top: 3px; margin-bottom: 20px; }
+.sec-lbl   { font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: .1em; margin-bottom: 10px; }
+.game-meta { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+
+/* ── INPUTS ─────────────────────────────────────────────────
+   type="text" inputmode="numeric" — avoids iOS type=number bugs
+   (iOS number inputs can be janky; text+inputmode gives a clean numpad)
+   font-size >= 16px — prevents iOS from zooming in on focus
+   ─────────────────────────────────────────────────────────── */
+.txt-inp {
+  -webkit-appearance: none; appearance: none;
+  font-family: inherit; font-size: 16px;
+  background: var(--surf2); border: 1.5px solid var(--bdr); border-radius: 10px;
+  color: var(--txt); padding: 13px 14px; outline: none; width: 100%;
+  transition: border-color .2s;
+}
+.txt-inp:focus { border-color: var(--acc); }
+
+.num-inp {
+  -webkit-appearance: none; appearance: none;
+  font-family: inherit; font-size: 18px; font-weight: 800; text-align: right;
+  background: var(--bg); border: 1.5px solid var(--bdr); border-radius: 8px;
+  color: var(--txt); padding: 11px 12px; outline: none; width: 90px;
+  transition: border-color .2s;
+}
+.num-inp:focus { border-color: var(--acc); }
+
+.ws-inp {
+  -webkit-appearance: none; appearance: none;
+  font-family: inherit; font-size: 22px; font-weight: 800;
+  background: var(--surf2); border: 1.5px solid var(--bdr); border-radius: 10px;
+  color: var(--txt); padding: 13px 14px; outline: none; width: 100%;
+  transition: border-color .2s;
+}
+.ws-inp:focus { border-color: var(--acc); }
+
+/* ── BUTTONS ────────────────────────────────────────────── */
+.btn {
+  display: block; width: 100%; min-height: 52px; padding: 14px 16px;
+  background: var(--acc); border-radius: 12px; border: none;
+  color: var(--fg); font-family: inherit; font-size: 16px; font-weight: 900;
+  letter-spacing: .01em; text-align: center; cursor: pointer;
+  touch-action: manipulation; transition: opacity .15s;
+}
+.btn:active         { opacity: .75; }
+.btn:disabled       { background: var(--surf2); color: var(--muted); opacity: 1; }
+.btn-ghost {
+  background: transparent; border: 1px solid var(--bdr); border-radius: 8px;
+  color: var(--muted); font-family: inherit; font-size: 12px; font-weight: 600;
+  padding: 8px 14px; flex-shrink: 0; min-height: 40px;
+  touch-action: manipulation;
+}
+.btn-ghost:active   { background: rgba(255,255,255,.08); }
+.btn-edit {
+  display: block; width: 100%; min-height: 52px; padding: 14px 16px;
+  background: transparent; border: 1.5px solid var(--acc); border-radius: 12px;
+  color: var(--acc); font-family: inherit; font-size: 16px; font-weight: 900;
+  text-align: center; letter-spacing: .01em; margin-top: 8px; cursor: pointer;
+  touch-action: manipulation;
+}
+.btn-edit:active    { background: rgba(255,255,255,.07); }
+
+/* ── PLAYER ROWS ────────────────────────────────────────── */
+.p-row {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--surf); border: 1px solid var(--bdr); border-radius: 10px;
+  padding: 13px 14px; margin-bottom: 8px; min-height: 62px;
+}
+.p-row.sel-able { touch-action: manipulation; transition: border-color .15s, background .15s; }
+.p-row.sel-able:active { background: rgba(255,255,255,.07); }
+.p-row.sel-ed   { background: rgba(255,255,255,.06); border: 2px solid var(--acc); }
+
+/* ── AVATAR ─────────────────────────────────────────────── */
+.av {
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-weight: 900; flex-shrink: 0;
+  -webkit-user-select: none; user-select: none;
+  color: #fff; letter-spacing: -.02em;
+}
+
+/* ── SCORE CARDS ────────────────────────────────────────── */
+.sc-card {
+  background: var(--surf); border: 2px solid var(--bdr); border-radius: 13px;
+  overflow: hidden; margin-bottom: 10px; transition: border-color .2s;
+}
+.sc-card.lead { border-color: var(--adim); }
+.sc-card.win  { border-color: var(--acc); }
+.sc-body  { padding: 13px 14px; display: flex; align-items: center; gap: 11px; }
+.sc-av-wrap { position: relative; flex-shrink: 0; }
+.sc-crown { position: absolute; top: -9px; right: -9px; font-size: 14px; line-height: 1; }
+.sc-name-col { flex: 1; min-width: 0; }
+.sc-name { font-weight: 700; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Phase controls */
+.ph-ctrl { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.ph-btn  {
+  width: 36px; height: 36px; border-radius: 50%;
+  font-size: 18px; display: flex; align-items: center; justify-content: center;
+  font-family: inherit; font-weight: 900; flex-shrink: 0;
+  touch-action: manipulation; transition: opacity .15s;
+}
+.ph-btn:disabled { opacity: .2; }
+.ph-btn:active:not(:disabled) { opacity: .6; }
+.ph-btn.minus { background: var(--surf2); color: var(--txt); }
+.ph-btn.plus  { background: var(--acc);   color: var(--fg); }
+.ph-badge {
+  background: var(--surf2); border-radius: 6px; padding: 4px 10px;
+  font-size: 12px; font-weight: 700; color: var(--acc); white-space: nowrap;
+}
+.sc-num-col { text-align: right; flex-shrink: 0; }
+.sc-total   { font-size: 26px; font-weight: 900; line-height: 1; color: var(--txt); }
+.sc-total.hl { color: var(--acc); }
+.sc-of { font-size: 10px; color: var(--muted); margin-top: 2px; }
+.exp-btn {
+  color: var(--muted); font-family: inherit; font-size: 16px;
+  padding: 8px; flex-shrink: 0; min-width: 40px; min-height: 40px;
+  display: flex; align-items: center; justify-content: center;
+  touch-action: manipulation;
+}
+.exp-btn:active { color: var(--txt); }
+/* Progress bar */
+.prog-wrap { height: 3px; background: var(--surf2); margin: 0 14px 12px; border-radius: 2px; }
+.prog-fill { height: 100%; background: var(--acc); border-radius: 2px; transition: width .4s ease; }
+
+/* ── HISTORY ────────────────────────────────────────────── */
+.hist-panel { border-top: 1px solid var(--bdr); padding: 12px 14px; }
+.hist-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.05); font-size: 13px; }
+.hist-row:last-child { border-bottom: none; }
+.ph-info { background: var(--surf2); border-radius: 8px; padding: 8px 10px; margin-bottom: 10px; font-size: 12px; }
+
+/* ── WINNER BANNER ──────────────────────────────────────── */
+.win-banner { background: var(--acc); border-radius: 14px; padding: 20px; text-align: center; margin-bottom: 14px; }
+.win-trophy { font-size: 36px; margin-bottom: 4px; }
+.win-name   { font-size: 22px; font-weight: 900; color: var(--fg); }
+.win-sub    { font-size: 13px; color: var(--fg); opacity: .65; margin-top: 3px; }
+
+/* ── RULES ──────────────────────────────────────────────── */
+.rules-btn {
+  width: 100%; min-height: 48px; padding: 13px 14px;
+  background: var(--surf); border: 1px solid var(--bdr); border-radius: 10px;
+  color: var(--txt); font-weight: 600; font-family: inherit; font-size: 14px;
+  display: flex; justify-content: space-between; align-items: center;
+  touch-action: manipulation;
+}
+.rules-btn:active { background: var(--surf2); }
+.rules-grid { margin-top: 8px; background: var(--surf2); border-radius: 10px; padding: 12px 14px; border: 1px solid var(--bdr); margin-bottom: 14px; }
+.r-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,.05); font-size: 13px; }
+.r-row:last-child { border-bottom: none; }
+.r-pts { font-weight: 700; color: var(--gold); white-space: nowrap; padding-left: 12px; }
+
+/* ── ROUND PANEL ────────────────────────────────────────── */
+.rnd-panel { background: var(--surf); border: 1px solid var(--bdr); border-radius: 14px; padding: 16px; margin-top: 4px; }
+.rnd-panel.editing { border-color: var(--adim); }
+.rnd-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.rnd-nav {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: var(--surf2); border: 1px solid var(--bdr);
+  color: var(--txt); font-size: 22px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: inherit; flex-shrink: 0;
+  touch-action: manipulation; -webkit-user-select: none; user-select: none;
+  transition: opacity .15s;
+}
+.rnd-nav:active:not(:disabled) { background: var(--bdr); }
+.rnd-nav:disabled { opacity: .22; }
+.rnd-lbl { font-size: 14px; font-weight: 800; letter-spacing: .05em; color: var(--txt); }
+.rnd-sub { font-size: 11px; color: var(--acc); margin-top: 3px; letter-spacing: .08em; font-weight: 700; }
+
+/* ── MISC ───────────────────────────────────────────────── */
+.empty { text-align: center; padding: 40px 20px; color: var(--muted); }
+.empty-ico { font-size: 44px; margin-bottom: 12px; }
+.empty-ttl { font-weight: 700; font-size: 16px; }
+.empty-sub { font-size: 13px; margin-top: 4px; }
+.row     { display: flex; align-items: center; gap: 8px; }
+.hdr-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; }
+.mt8{margin-top:8px} .mt12{margin-top:12px} .mt16{margin-top:16px}
+.mb8{margin-bottom:8px} .mb14{margin-bottom:14px} .mb16{margin-bottom:16px}
+
+/* ── SMALL SCREENS (iPhone SE / older Android) ─────────── */
+@media (max-width: 390px) {
+  .f7-flip   { font-size: 32px; }
+  .f7-card   { width: 44px; height: 58px; font-size: 30px; }
+  .f7-pip    { width: 25px; height: 34px; font-size: 13px; }
+  .fk-word   { font-size: 42px; }
+  .p10-phase { font-size: 28px; }
+  .p10-ten   { font-size: 58px; }
+  .sc-total  { font-size: 22px; }
+  .num-inp   { width: 80px; font-size: 16px; }
+}
+</style>
+</head>
+
+<!-- ontouchstart="" is an intentional iOS Safari trick:
+     it makes the browser fire :active CSS states on touch,
+     which otherwise only fire on elements with onclick handlers. -->
+<body ontouchstart="">
+
+<nav id="tabs">
+  <button class="tab on" data-t="players"><span class="ico">👥</span><span>PLAYERS</span></button>
+  <button class="tab" data-t="flip7"  ><span class="ico">🃏</span><span>FLIP 7</span></button>
+  <button class="tab" data-t="farkle" ><span class="ico">🎲</span><span>FARKLE</span></button>
+  <button class="tab" data-t="phase10"><span class="ico">🔢</span><span>PHASE 10</span></button>
+</nav>
+
+<main id="app"></main>
+
+<script>
+// ─── CONSTANTS ───────────────────────────────────────────
+const AV = ['#2563EB','#16A34A','#DC2626','#9333EA','#D97706','#0891B2','#DB2777','#65A30D'];
+
+const CFG = {
+  flip7:   {defWin:200,   winLbl:'Score to win', hasPhases:false, hasRules:false, hi:true },
+  farkle:  {defWin:10000, winLbl:'Score to win', hasPhases:false, hasRules:true,  hi:true },
+  phase10: {defWin:0,     winLbl:'',             hasPhases:true,  hasRules:false, hi:false},
+};
+
+const RULES = [
+  ['Single Five','50 pts'],['Single One','100 pts'],
+  ['Three 1s','300 pts'],['Three 2s','200 pts'],['Three 3s','300 pts'],
+  ['Three 4s','400 pts'],['Three 5s','500 pts'],['Three 6s','600 pts'],
+  ['Four of any number','1,000 pts'],['Five of any number','2,000 pts'],
+  ['Six of any number','3,000 pts'],['1–6 Straight','1,500 pts'],
+  ['Three pairs','1,500 pts'],['Four of any + a pair','1,500 pts'],
+  ['Two triplets','2,500 pts'],
+];
+
+const PHASES = [
+  '2 sets of 3','1 set of 3 + 1 run of 4','1 set of 4 + 1 run of 4',
+  '1 run of 7','1 run of 8','1 run of 9','2 sets of 4',
+  '7 cards of one color','1 set of 5 + 1 set of 2','1 set of 5 + 1 set of 3',
+];
+
+const F7_PIPS = [
+  ['0','#D32F2F'],['1','#1565C0'],['2','#2E7D32'],['3','#E65100'],
+  ['4','#6A1B9A'],['5','#00838F'],['6','#AD1457'],['7','#F9A825'],
+];
+
+// ─── STATE ───────────────────────────────────────────────
+let tab = 'players';
+let S = { players: [], games: { flip7: null, farkle: null, phase10: null } };
+const U = {
+  exp: {}, showRules: false,
+  ws:  { flip7: 200, farkle: 10000, phase10: 0 },
+  sel: { flip7: [],  farkle: [],    phase10: [] },
+  rv:  { flip7: null, farkle: null, phase10: null },
+};
+
+function save() { try { localStorage.setItem('gnt5', JSON.stringify(S)); } catch(e) {} }
+function load() { try { const d = localStorage.getItem('gnt5'); if (d) S = JSON.parse(d); } catch(e) {} }
+
+// ─── HELPERS ─────────────────────────────────────────────
+const esc = s => String(s)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+const pidx = id => S.players.findIndex(p => p.id === id);
+
+function avEl(name, i, w = 38, useAcc = false) {
+  const bg = useAcc ? 'var(--acc)' : AV[i < 0 ? 0 : i % AV.length];
+  const fg = useAcc ? 'var(--fg)'  : '#fff';
+  const fs = Math.round(w * .42);
+  return `<div class="av" style="width:${w}px;height:${w}px;background:${bg};color:${fg};font-size:${fs}px">${name ? esc(name[0].toUpperCase()) : '?'}</div>`;
+}
+
+function calcTotals(gk) {
+  const g = S.games[gk];
+  if (!g) return {};
+  return Object.fromEntries(g.playerIds.map(id => [id, g.rounds.reduce((s,r) => s + (r[id]||0), 0)]));
+}
+
+// ─── BRAND HEADERS ───────────────────────────────────────
+function brand(gk) {
+  if (gk === 'flip7') return `
+    <div class="brand b-flip7">
+      <div class="f7-main">
+        <span class="f7-flip">FLIP</span>
+        <div class="f7-card">7</div>
+      </div>
+      <div class="f7-row">
+        ${F7_PIPS.map(([n,c]) => `<div class="f7-pip" style="background:${c}">${n}</div>`).join('')}
+      </div>
+      <div class="b-tag">Score Tracker · Race to ${U.ws.flip7 || 200} pts</div>
+    </div>`;
+
+  if (gk === 'farkle') return `
+    <div class="brand b-farkle">
+      <div class="fk-dice">⚅ ⚀ ⚄ ⚁ ⚃ ⚂</div>
+      <div class="fk-word">FARKLE</div>
+      <div class="fk-tag">Score Tracker · Race to ${(U.ws.farkle||10000).toLocaleString()} pts</div>
+    </div>`;
+
+  if (gk === 'phase10') return `
+    <div class="brand b-p10">
+      <div class="p10-main">
+        <span class="p10-phase">PHASE</span>
+        <span class="p10-ten">10</span>
+      </div>
+      <div class="p10-tag">Score Tracker · Complete all 10 phases to win</div>
+    </div>`;
+
+  return '';
+}
+
+// ─── RENDER ──────────────────────────────────────────────
+function render() {
+  const el = document.getElementById('app');
+  if (tab === 'players') {
+    el.innerHTML = renderPlayers();
+  } else {
+    el.innerHTML = S.games[tab] ? renderActive(tab) : renderSetup(tab);
+  }
+  bind();
+}
+
+function renderPlayers() {
+  return `
+    <div class="pg-title">Players</div>
+    <div class="pg-sub">Your roster — saved across all games and sessions.</div>
+    <div class="row mb16">
+      <input id="ni" type="text" class="txt-inp" style="flex:1"
+        placeholder="Enter name…" autocomplete="off" autocorrect="off" autocapitalize="words">
+      <button id="ab" class="btn" style="width:auto;padding:12px 22px;flex-shrink:0">Add</button>
+    </div>
+    ${!S.players.length
+      ? `<div class="empty">
+           <div class="empty-ico">👥</div>
+           <div class="empty-ttl">No players yet</div>
+           <div class="empty-sub">Add names above to get started</div>
+         </div>`
+      : S.players.map((p, i) => `
+        <div class="p-row">
+          ${avEl(p.name, i)}
+          <span style="flex:1;font-weight:600;font-size:16px">${esc(p.name)}</span>
+          <button class="rp" data-id="${p.id}"
+            style="color:var(--muted);font-size:24px;padding:8px;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;touch-action:manipulation">×</button>
+        </div>`).join('')}`;
+}
+
+function rulesHtml() {
+  return `<div class="rules-grid">
+    ${RULES.map(([c,p]) => `<div class="r-row"><span>${esc(c)}</span><span class="r-pts">${esc(p)}</span></div>`).join('')}
+  </div>`;
+}
+
+function renderSetup(gk) {
+  const c = CFG[gk], sel = U.sel[gk], ws = U.ws[gk], ok = sel.length >= 2;
+  let h = brand(gk);
+
+  if (c.hasRules) {
+    h += `<div class="mb14">
+      <button class="rules-btn" id="rb">
+        <span>🎲 Scoring reference</span>
+        <span style="font-size:11px;color:var(--muted)">${U.showRules ? '▲ hide' : '▼ show'}</span>
+      </button>
+      ${U.showRules ? rulesHtml() : ''}
+    </div>`;
+  }
+
+  if (!S.players.length) {
+    return h + `<div style="padding:28px;text-align:center;color:var(--muted);background:var(--surf);border-radius:12px;border:1px solid var(--bdr);font-size:15px">
+      Head to the <strong style="color:var(--txt)">Players</strong> tab to add players first.
+    </div>`;
+  }
+
+  h += `<div class="sec-lbl">SELECT PLAYERS</div>`;
+  h += S.players.map((p, i) => {
+    const s = sel.includes(p.id);
+    return `<div class="p-row sel-able${s ? ' sel-ed' : ''}" data-sl="${p.id}">
+      <div class="av" style="width:38px;height:38px;font-size:16px;background:${s ? 'var(--acc)' : AV[i%AV.length]};color:${s ? 'var(--fg)' : '#fff'};transition:background .15s">
+        ${esc(p.name[0].toUpperCase())}
+      </div>
+      <span style="flex:1;font-weight:600;font-size:15px">${esc(p.name)}</span>
+      <span style="color:var(--acc);font-size:18px;width:20px;text-align:center">${s ? '✓' : ''}</span>
+    </div>`;
+  }).join('');
+
+  if (c.defWin > 0) {
+    h += `<div class="mt16 mb16">
+      <div class="sec-lbl">${esc(c.winLbl).toUpperCase()}</div>
+      <input id="wsi" type="text" inputmode="numeric" pattern="[0-9]*" class="ws-inp" value="${ws}">
+    </div>`;
+  }
+
+  h += `<button id="strt" class="btn mt8"${!ok ? ' disabled' : ''}>
+    ${ok ? `Start game — ${sel.length} player${sel.length > 1 ? 's' : ''}` : 'Select at least 2 players'}
+  </button>`;
+  return h;
+}
+
+function renderActive(gk) {
+  const c = CFG[gk], g = S.games[gk], T = calcTotals(gk);
+  const gp = g.playerIds.map(id => S.players.find(p => p.id === id)).filter(Boolean);
+  const sorted = [...gp].sort((a,b) => c.hi ? T[b.id]-T[a.id] : T[a.id]-T[b.id]);
+  const wp = g.winner ? S.players.find(p => p.id === g.winner) : null;
+
+  if (gk === 'flip7')  U.ws.flip7  = g.winScore || 200;
+  if (gk === 'farkle') U.ws.farkle = g.winScore || 10000;
+
+  let h = brand(gk);
+
+  h += `<div class="hdr-row">
+    <div style="flex:1" class="game-meta">${
+      c.hasPhases
+        ? `Round ${g.rounds.length} · First to complete all 10 phases wins`
+        : g.winScore > 0
+        ? `First to ${g.winScore.toLocaleString()} pts · Round ${g.rounds.length}`
+        : `Round ${g.rounds.length}`
+    }</div>
+    <button id="ngb" class="btn-ghost">New game</button>
+  </div>`;
+
+  if (c.hasRules) {
+    h += `<div class="mb14">
+      <button class="rules-btn" id="rb">
+        <span>🎲 Scoring reference</span>
+        <span style="font-size:11px;color:var(--muted)">${U.showRules ? '▲ hide' : '▼ show'}</span>
+      </button>
+      ${U.showRules ? rulesHtml() : ''}
+    </div>`;
+  }
+
+  if (wp) {
+    h += `<div class="win-banner">
+      <div class="win-trophy">🏆</div>
+      <div class="win-name">${esc(wp.name)} wins!</div>
+      <div class="win-sub">${g.rounds.length} rounds · ${(T[wp.id]||0).toLocaleString()} pts</div>
+    </div>`;
+  }
+
+  // Score cards
+  sorted.forEach((p, idx) => {
+    const isW  = g.winner === p.id;
+    const isF  = idx === 0;
+    const hl   = isW || (!g.winner && isF);
+    const tot  = T[p.id] || 0;
+    const pct  = g.winScore > 0 ? Math.min(100, (tot / g.winScore) * 100) : 0;
+    const ph   = c.hasPhases ? (g.phases ? g.phases[p.id] || 1 : 1) : null;
+    const phPct = ph ? Math.min(100, ((ph-1)/10)*100) : 0;
+    const pi   = pidx(p.id);
+    const avBg = hl ? 'var(--acc)' : AV[pi % AV.length];
+    const avFg = hl ? 'var(--fg)'  : '#fff';
+    const isExp = U.exp[p.id];
+
+    h += `<div class="sc-card${isW ? ' win' : isF && !g.winner ? ' lead' : ''}">
+      <div class="sc-body">
+        <div class="sc-av-wrap">
+          <div class="av" style="width:40px;height:40px;font-size:17px;background:${avBg};color:${avFg};transition:background .2s">
+            ${esc(p.name[0].toUpperCase())}
+          </div>
+          ${hl ? `<span class="sc-crown">${isW ? '🏆' : '👑'}</span>` : ''}
+        </div>
+        <div class="sc-name-col">
+          <div class="sc-name">${esc(p.name)}</div>
+          ${c.hasPhases ? `<div class="ph-ctrl">
+            <button class="ph-btn minus" data-pp="${p.id}" data-d="-1"${ph <= 1 ? ' disabled' : ''}>−</button>
+            <div class="ph-badge">${ph <= 10 ? `Phase ${ph}` : '✅ Done'}</div>
+            <button class="ph-btn plus" data-pp="${p.id}" data-d="1"${ph > 10 ? ' disabled' : ''}>+</button>
+          </div>` : ''}
+        </div>
+        <div class="sc-num-col">
+          <div class="sc-total${hl ? ' hl' : ''}">${tot.toLocaleString()}</div>
+          ${g.winScore > 0 ? `<div class="sc-of">/ ${g.winScore.toLocaleString()}</div>` : ''}
+        </div>
+        <button class="exp-btn" data-ex="${p.id}">${isExp ? '▲' : '▼'}</button>
+      </div>
+
+      ${(g.winScore > 0 && !c.hasPhases) || c.hasPhases ? `
+        <div class="prog-wrap">
+          <div class="prog-fill" style="width:${c.hasPhases ? phPct : pct}%"></div>
+        </div>` : ''}
+
+      ${isExp ? `<div class="hist-panel">
+        ${c.hasPhases && ph ? `<div class="ph-info">
+          <span style="color:var(--acc);font-weight:700">${ph <= 10 ? `Phase ${ph}: ` : 'All phases complete! '}</span>
+          <span style="color:var(--muted)">${ph <= 10 ? esc(PHASES[ph-1]) : '🎉'}</span>
+        </div>` : ''}
+        <div class="sec-lbl mb8">ROUND HISTORY</div>
+        ${!g.rounds.length
+          ? `<div style="color:var(--muted);font-size:13px">No rounds yet.</div>`
+          : g.rounds.map((r,i) => {
+              const run = g.rounds.slice(0,i+1).reduce((s,rr) => s+(rr[p.id]||0), 0);
+              return `<div class="hist-row">
+                <span style="color:var(--muted)">Round ${i+1}</span>
+                <div style="display:flex;gap:14px">
+                  <span style="font-weight:600">+${(r[p.id]||0).toLocaleString()}</span>
+                  <span style="color:var(--muted);min-width:52px;text-align:right">${run.toLocaleString()}</span>
+                </div>
+              </div>`;
+            }).join('')}
+      </div>` : ''}
+    </div>`;
+  });
+
+  // Round navigation panel
+  {
+    const total = g.rounds.length;
+    const maxIdx = g.winner ? Math.max(0, total-1) : total;
+    let vi = U.rv[gk] !== null && U.rv[gk] !== undefined ? U.rv[gk] : total;
+    vi = Math.min(Math.max(0, vi), maxIdx);
+    U.rv[gk] = vi;
+    const isNew  = vi >= total;
+    const isLast = vi >= maxIdx;
+    const rn     = total + 1;
+
+    h += `<div class="rnd-panel${isNew ? '' : ' editing'}">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <button id="rnd-prev" class="rnd-nav"${vi === 0 ? ' disabled' : ''}>←</button>
+        <div style="flex:1;text-align:center">
+          ${isNew
+            ? `<div class="rnd-lbl">NEW ROUND ${rn}</div>`
+            : `<div class="rnd-lbl">ROUND ${vi+1} <span style="opacity:.45">/ ${total}</span></div>
+               <div class="rnd-sub">✏ EDITING</div>`}
+        </div>
+        <button id="rnd-next" class="rnd-nav"${isLast ? ' disabled' : ''}>→</button>
+      </div>
+      ${gp.map(p => {
+        const pi  = pidx(p.id);
+        const val = isNew ? '' : (g.rounds[vi][p.id] !== undefined ? g.rounds[vi][p.id] : 0);
+        return `<div class="rnd-row">
+          <div class="av" style="width:32px;height:32px;font-size:13px;background:${AV[pi%AV.length]};color:#fff;flex-shrink:0">
+            ${esc(p.name[0].toUpperCase())}
+          </div>
+          <span style="flex:1;font-weight:600;font-size:15px">${esc(p.name)}</span>
+          <input class="num-inp" type="text" inputmode="numeric" pattern="[0-9]*"
+            data-pi="${p.id}" placeholder="0" value="${isNew ? '' : val}">
+        </div>`;
+      }).join('')}
+      ${isNew
+        ? `<button id="sub" class="btn mt8">Submit round ${rn}</button>`
+        : `<button id="sav" class="btn-edit">✓ Save changes</button>`}
+    </div>`;
+  }
+
+  if (wp) h += `<button id="ngb2" class="btn mt12">Start new game</button>`;
+  return h;
+}
+
+// ─── BIND ────────────────────────────────────────────────
+function bind() {
+  // Players
+  const ni = document.getElementById('ni');
+  const ab = document.getElementById('ab');
+  if (ni) ni.addEventListener('keydown', e => { if (e.key === 'Enter') addPlayer(ni.value); });
+  if (ab) ab.addEventListener('click', () => { const n = document.getElementById('ni'); if (n) addPlayer(n.value); });
+
+  document.querySelectorAll('.rp').forEach(b =>
+    b.addEventListener('click', () => {
+      S.players = S.players.filter(p => p.id !== b.dataset.id);
+      save(); render();
+    })
+  );
+
+  // Setup
+  document.querySelectorAll('[data-sl]').forEach(el =>
+    el.addEventListener('click', () => {
+      const id = el.dataset.sl, s = U.sel[tab];
+      U.sel[tab] = s.includes(id) ? s.filter(x => x !== id) : [...s, id];
+      render();
+    })
+  );
+
+  const wsi = document.getElementById('wsi');
+  if (wsi) wsi.addEventListener('change', e => {
+    U.ws[tab] = parseInt(e.target.value) || CFG[tab].defWin;
+  });
+
+  const strt = document.getElementById('strt');
+  if (strt) strt.addEventListener('click', () => {
+    const sel = U.sel[tab];
+    if (sel.length < 2) return;
+    const c = CFG[tab], ws = c.hasPhases ? 0 : (U.ws[tab] || c.defWin);
+    S.games[tab] = {
+      playerIds: [...sel], winScore: ws, rounds: [],
+      phases: c.hasPhases ? Object.fromEntries(sel.map(id => [id, 1])) : null,
+      winner: null,
+    };
+    U.exp = {}; U.rv[tab] = null;
+    save(); render();
+  });
+
+  // Rules toggle
+  const rb = document.getElementById('rb');
+  if (rb) rb.addEventListener('click', () => { U.showRules = !U.showRules; render(); });
+
+  // Active game
+  const ngb  = document.getElementById('ngb');
+  const ngb2 = document.getElementById('ngb2');
+  if (ngb)  ngb.addEventListener('click',  newGame);
+  if (ngb2) ngb2.addEventListener('click', newGame);
+
+  document.querySelectorAll('[data-ex]').forEach(b =>
+    b.addEventListener('click', () => { U.exp[b.dataset.ex] = !U.exp[b.dataset.ex]; render(); })
+  );
+
+  document.querySelectorAll('[data-pp]').forEach(b =>
+    b.addEventListener('click', () => changePhase(b.dataset.pp, parseInt(b.dataset.d)))
+  );
+
+  // Round nav
+  const prev = document.getElementById('rnd-prev');
+  const next = document.getElementById('rnd-next');
+  if (prev) prev.addEventListener('click', () => {
+    const g = S.games[tab]; if (!g) return;
+    const vi = U.rv[tab] !== null ? U.rv[tab] : g.rounds.length;
+    if (vi > 0) { U.rv[tab] = vi - 1; render(); }
+  });
+  if (next) next.addEventListener('click', () => {
+    const g = S.games[tab]; if (!g) return;
+    const maxIdx = g.winner ? Math.max(0, g.rounds.length-1) : g.rounds.length;
+    const vi = U.rv[tab] !== null ? U.rv[tab] : g.rounds.length;
+    if (vi < maxIdx) { U.rv[tab] = vi + 1; render(); }
+  });
+
+  const sub = document.getElementById('sub');
+  const sav = document.getElementById('sav');
+  if (sub) sub.addEventListener('click', submitRound);
+  if (sav) sav.addEventListener('click', saveRound);
+}
+
+// ─── ACTIONS ─────────────────────────────────────────────
+function addPlayer(name) {
+  const n = (name || '').trim();
+  if (!n || S.players.some(p => p.name.toLowerCase() === n.toLowerCase())) return;
+  S.players.push({ id: String(Date.now()), name: n });
+  save(); render();
+}
+
+function newGame() {
+  S.games[tab] = null;
+  U.exp = {}; U.showRules = false; U.sel[tab] = []; U.rv[tab] = null;
+  save(); render();
+}
+
+function readInputs(gp) {
+  const sc = {};
+  document.querySelectorAll('[data-pi]').forEach(inp => {
+    sc[inp.dataset.pi] = parseInt(inp.value || '0') || 0;
+  });
+  gp.forEach(p => { if (sc[p.id] === undefined) sc[p.id] = 0; });
+  return sc;
+}
+
+function recalcWinner(gk) {
+  const g = S.games[gk], c = CFG[gk];
+  if (!g || c.hasPhases) return;
+  if (g.winScore <= 0) { g.winner = null; return; }
+  const T = calcTotals(gk);
+  const gp = g.playerIds.map(id => S.players.find(p => p.id === id)).filter(Boolean);
+  const sorted = [...gp].sort((a,b) => T[b.id]-T[a.id]);
+  g.winner = null;
+  for (const p of sorted) { if (T[p.id] >= g.winScore) { g.winner = p.id; break; } }
+}
+
+function submitRound() {
+  const g = S.games[tab]; if (!g) return;
+  const gp = g.playerIds.map(id => S.players.find(p => p.id === id)).filter(Boolean);
+  g.rounds.push(readInputs(gp));
+  recalcWinner(tab);
+  U.rv[tab] = g.rounds.length;
+  save(); render();
+}
+
+function saveRound() {
+  const g = S.games[tab]; if (!g) return;
+  const vi = U.rv[tab];
+  if (vi === null || vi === undefined || vi >= g.rounds.length) return;
+  const gp = g.playerIds.map(id => S.players.find(p => p.id === id)).filter(Boolean);
+  g.rounds[vi] = readInputs(gp);
+  recalcWinner(tab);
+  save(); render();
+}
+
+function changePhase(pid, delta) {
+  const g = S.games[tab]; if (!g || !g.phases) return;
+  const cur = g.phases[pid] || 1;
+  const next = Math.max(1, Math.min(11, cur + delta));
+  if (next === cur) return;
+  g.phases[pid] = next;
+  if (next > 10) g.winner = pid;
+  else if (g.winner === pid && delta < 0) g.winner = null;
+  save(); render();
+}
+
+// ─── TAB SWITCHING ───────────────────────────────────────
+document.getElementById('tabs').addEventListener('click', e => {
+  const btn = e.target.closest('.tab');
+  if (!btn) return;
+  const t = btn.dataset.t;
+  if (t === tab) return;
+  tab = t;
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  document.body.className = t === 'players' ? '' : `t-${t}`;
+  U.showRules = false; U.exp = {}; U.rv[tab] = null;
+  render();
+});
+
+// ─── INIT ────────────────────────────────────────────────
+load();
+render();
+</script>
+</body>
+</html>
