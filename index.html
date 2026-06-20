@@ -69,6 +69,14 @@ body.t-phase10 {
   background-image: linear-gradient(rgba(255,215,0,.022) 1px, transparent 1px);
   background-size: 100% 48px;
 }
+body.t-general {
+  --bg:#0C2418; --surf:#122E1E; --surf2:#193A26;
+  --acc:#22C55E; --fg:#021208;
+  --txt:#E8F5EE; --muted:#508060; --bdr:#1E4A2C;
+  --gold:#F59E0B; --adim:rgba(34,197,94,.4);
+  background-image: radial-gradient(circle, rgba(34,197,94,.06) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
 
 /* ── TAB BAR ────────────────────────────────────────────
    env(safe-area-inset-top) pads below Dynamic Island in PWA mode.
@@ -156,6 +164,30 @@ body.t-phase10 {
 .b-tag   { font-size: 10px; letter-spacing: .18em; text-transform: uppercase; margin-top: 10px; position: relative; color: rgba(255,255,255,.3); }
 .fk-tag  { font-size: 10px; letter-spacing: .18em; text-transform: uppercase; margin-top:  6px; position: relative; color: rgba(212,168,36,.4); }
 .p10-tag { font-size: 10px; letter-spacing: .18em; text-transform: uppercase; margin-top:  4px; position: relative; color: rgba(255,255,255,.28); }
+/* General Games */
+.b-general {
+  background: linear-gradient(145deg, #0E2E1C 0%, #163A22 60%, #0E2E1C 100%);
+  border: 1px solid #1E5030;
+}
+.b-general::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse 80% 55% at 50% 100%, rgba(34,197,94,.18) 0%, transparent 65%);
+}
+.gen-icons    { font-size: 26px; letter-spacing: 6px; margin-bottom: 8px; position: relative; }
+.gen-title    { font-size: 38px; font-weight: 900; letter-spacing: .1em; color: #22C55E; position: relative; text-shadow: 0 0 28px rgba(34,197,94,.45); }
+.gen-sub      { font-size: 22px; font-weight: 900; letter-spacing: .2em; color: rgba(255,255,255,.55); position: relative; margin-top: -2px; }
+.gen-tag      { font-size: 10px; letter-spacing: .18em; text-transform: uppercase; margin-top: 8px; position: relative; color: rgba(34,197,94,.4); }
+.gen-gname    { font-size: 34px; font-weight: 900; color: #fff; letter-spacing: .04em; position: relative; text-shadow: 0 2px 10px rgba(0,0,0,.5); }
+/* Scoring direction toggle */
+.dir-row      { display: flex; gap: 8px; margin-top: 2px; }
+.dir-btn {
+  flex: 1; min-height: 48px; padding: 12px 8px;
+  background: var(--surf2); border: 1.5px solid var(--bdr); border-radius: 10px;
+  color: var(--muted); font-family: inherit; font-size: 14px; font-weight: 600;
+  touch-action: manipulation; transition: border-color .15s, color .15s;
+}
+.dir-btn.on   { border-color: var(--acc); color: var(--acc); }
+.dir-btn:active { opacity: .8; }
 
 /* ── TYPOGRAPHY ─────────────────────────────────────────── */
 .pg-title  { font-size: 22px; font-weight: 900; letter-spacing: -.03em; }
@@ -360,6 +392,7 @@ body.t-phase10 {
   <button class="tab" data-t="flip7"  ><span class="ico">🃏</span><span>FLIP 7</span></button>
   <button class="tab" data-t="farkle" ><span class="ico">🎲</span><span>FARKLE</span></button>
   <button class="tab" data-t="phase10"><span class="ico">🔢</span><span>PHASE 10</span></button>
+  <button class="tab" data-t="general"><span class="ico">🎯</span><span>GENERAL</span></button>
 </nav>
 
 <main id="app"></main>
@@ -369,9 +402,10 @@ body.t-phase10 {
 const AV = ['#2563EB','#16A34A','#DC2626','#9333EA','#D97706','#0891B2','#DB2777','#65A30D'];
 
 const CFG = {
-  flip7:   {defWin:200,   winLbl:'Score to win', hasPhases:false, hasRules:false, hi:true },
-  farkle:  {defWin:10000, winLbl:'Score to win', hasPhases:false, hasRules:true,  hi:true },
-  phase10: {defWin:0,     winLbl:'',             hasPhases:true,  hasRules:false, hi:false},
+  flip7:   {defWin:200,   winLbl:'Score to win',                   hasPhases:false, hasRules:false, hi:true },
+  farkle:  {defWin:10000, winLbl:'Score to win',                   hasPhases:false, hasRules:true,  hi:true },
+  phase10: {defWin:0,     winLbl:'',                               hasPhases:true,  hasRules:false, hi:false},
+  general: {defWin:0,     winLbl:'Win score (0 = manual end)',     hasPhases:false, hasRules:false, hi:true },
 };
 
 const RULES = [
@@ -397,12 +431,14 @@ const F7_PIPS = [
 
 // ─── STATE ───────────────────────────────────────────────
 let tab = 'players';
-let S = { players: [], games: { flip7: null, farkle: null, phase10: null } };
+let S = { players: [], games: { flip7: null, farkle: null, phase10: null, general: null } };
 const U = {
   exp: {}, showRules: false,
-  ws:  { flip7: 200, farkle: 10000, phase10: 0 },
-  sel: { flip7: [],  farkle: [],    phase10: [] },
-  rv:  { flip7: null, farkle: null, phase10: null },
+  ws:  { flip7: 200, farkle: 10000, phase10: 0, general: 0 },
+  sel: { flip7: [],  farkle: [],    phase10: [], general: [] },
+  rv:  { flip7: null, farkle: null, phase10: null, general: null },
+  generalName: '',
+  generalHi: true,
 };
 
 function save() { try { localStorage.setItem('gnt5', JSON.stringify(S)); } catch(e) {} }
@@ -458,6 +494,22 @@ function brand(gk) {
       <div class="p10-tag">Score Tracker · Complete all 10 phases to win</div>
     </div>`;
 
+  if (gk === 'general') {
+    const g = S.games.general;
+    const name = (g && g.gameName) ? g.gameName : null;
+    return name
+      ? `<div class="brand b-general">
+           <div class="gen-gname">${esc(name)}</div>
+           <div class="gen-tag">General Games · Score Tracker</div>
+         </div>`
+      : `<div class="brand b-general">
+           <div class="gen-icons">🎯 ♟️ 🎲 🃏 🎮</div>
+           <div class="gen-title">GENERAL</div>
+           <div class="gen-sub">GAMES</div>
+           <div class="gen-tag">Score Tracker · Any game, any rules</div>
+         </div>`;
+  }
+
   return '';
 }
 
@@ -506,6 +558,23 @@ function renderSetup(gk) {
   const c = CFG[gk], sel = U.sel[gk], ws = U.ws[gk], ok = sel.length >= 2;
   let h = brand(gk);
 
+  // General Games: game name + scoring direction
+  if (gk === 'general') {
+    h += `<div class="mb16">
+      <div class="sec-lbl">GAME NAME</div>
+      <input id="gname" type="text" class="txt-inp" placeholder="e.g. Catan, Yahtzee, Uno…"
+        autocomplete="off" autocorrect="off" autocapitalize="words"
+        value="${esc(U.generalName)}">
+    </div>
+    <div class="mb16">
+      <div class="sec-lbl">WHO WINS?</div>
+      <div class="dir-row">
+        <button id="dir-hi" class="dir-btn${U.generalHi ? ' on' : ''}">🔼 Highest score</button>
+        <button id="dir-lo" class="dir-btn${!U.generalHi ? ' on' : ''}">🔽 Lowest score</button>
+      </div>
+    </div>`;
+  }
+
   if (c.hasRules) {
     h += `<div class="mb14">
       <button class="rules-btn" id="rb">
@@ -534,9 +603,12 @@ function renderSetup(gk) {
     </div>`;
   }).join('');
 
-  if (c.defWin > 0) {
+  if (c.defWin > 0 || gk === 'general') {
+    const lbl = gk === 'general'
+      ? (U.generalHi ? 'WIN SCORE (0 = MANUAL END)' : 'END SCORE (0 = MANUAL END)')
+      : esc(c.winLbl).toUpperCase();
     h += `<div class="mt16 mb16">
-      <div class="sec-lbl">${esc(c.winLbl).toUpperCase()}</div>
+      <div class="sec-lbl">${lbl}</div>
       <input id="wsi" type="text" inputmode="numeric" pattern="[0-9]*" class="ws-inp" value="${ws}">
     </div>`;
   }
@@ -549,8 +621,9 @@ function renderSetup(gk) {
 
 function renderActive(gk) {
   const c = CFG[gk], g = S.games[gk], T = calcTotals(gk);
+  const hiWins = (gk === 'general' && g.hiWins !== undefined) ? g.hiWins : c.hi;
   const gp = g.playerIds.map(id => S.players.find(p => p.id === id)).filter(Boolean);
-  const sorted = [...gp].sort((a,b) => c.hi ? T[b.id]-T[a.id] : T[a.id]-T[b.id]);
+  const sorted = [...gp].sort((a,b) => hiWins ? T[b.id]-T[a.id] : T[a.id]-T[b.id]);
   const wp = g.winner ? S.players.find(p => p.id === g.winner) : null;
 
   if (gk === 'flip7')  U.ws.flip7  = g.winScore || 200;
@@ -563,8 +636,8 @@ function renderActive(gk) {
       c.hasPhases
         ? `Round ${g.rounds.length} · First to complete all 10 phases wins`
         : g.winScore > 0
-        ? `First to ${g.winScore.toLocaleString()} pts · Round ${g.rounds.length}`
-        : `Round ${g.rounds.length}`
+        ? `${hiWins ? 'First to' : 'Lowest score when someone hits'} ${g.winScore.toLocaleString()} pts · Round ${g.rounds.length}`
+        : `Round ${g.rounds.length} · ${hiWins ? 'Highest' : 'Lowest'} score wins`
     }</div>
     <button id="ngb" class="btn-ghost">New game</button>
   </div>`;
@@ -719,6 +792,14 @@ function bind() {
     })
   );
 
+  // General Games setup fields
+  const gname = document.getElementById('gname');
+  if (gname) gname.addEventListener('input', e => { U.generalName = e.target.value; });
+  const dirHi = document.getElementById('dir-hi');
+  const dirLo = document.getElementById('dir-lo');
+  if (dirHi) dirHi.addEventListener('click', () => { U.generalHi = true;  render(); });
+  if (dirLo) dirLo.addEventListener('click', () => { U.generalHi = false; render(); });
+
   const wsi = document.getElementById('wsi');
   if (wsi) wsi.addEventListener('change', e => {
     U.ws[tab] = parseInt(e.target.value) || CFG[tab].defWin;
@@ -728,11 +809,13 @@ function bind() {
   if (strt) strt.addEventListener('click', () => {
     const sel = U.sel[tab];
     if (sel.length < 2) return;
-    const c = CFG[tab], ws = c.hasPhases ? 0 : (U.ws[tab] || c.defWin);
+    const c = CFG[tab], ws = c.hasPhases ? 0 : (U.ws[tab] || 0);
     S.games[tab] = {
       playerIds: [...sel], winScore: ws, rounds: [],
       phases: c.hasPhases ? Object.fromEntries(sel.map(id => [id, 1])) : null,
       winner: null,
+      gameName: tab === 'general' ? (U.generalName.trim() || 'General Game') : undefined,
+      hiWins:   tab === 'general' ? U.generalHi : undefined,
     };
     U.exp = {}; U.rv[tab] = null;
     save(); render();
@@ -806,9 +889,13 @@ function recalcWinner(gk) {
   if (g.winScore <= 0) { g.winner = null; return; }
   const T = calcTotals(gk);
   const gp = g.playerIds.map(id => S.players.find(p => p.id === id)).filter(Boolean);
-  const sorted = [...gp].sort((a,b) => T[b.id]-T[a.id]);
-  g.winner = null;
-  for (const p of sorted) { if (T[p.id] >= g.winScore) { g.winner = p.id; break; } }
+  const hiWins = (gk === 'general' && g.hiWins !== undefined) ? g.hiWins : c.hi;
+  // Trigger: any player reaches/exceeds the score threshold
+  const anyOver = gp.some(p => T[p.id] >= g.winScore);
+  if (!anyOver) { g.winner = null; return; }
+  // Winner is highest scorer (hi games) or lowest scorer (lo games)
+  const sorted = [...gp].sort((a,b) => hiWins ? T[b.id]-T[a.id] : T[a.id]-T[b.id]);
+  g.winner = sorted[0].id;
 }
 
 function submitRound() {
