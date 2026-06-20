@@ -151,6 +151,12 @@ body.t-nertz {
 .fk-tag  { font-size:10px; letter-spacing:.18em; text-transform:uppercase; margin-top:6px;  position:relative; color:rgba(212,168,36,.4); }
 .p10-tag { font-size:10px; letter-spacing:.18em; text-transform:uppercase; margin-top:4px;  position:relative; color:rgba(255,255,255,.28); }
 .gen-tag { font-size:10px; letter-spacing:.18em; text-transform:uppercase; margin-top:8px;  position:relative; color:rgba(34,197,94,.4); }
+/* Nertz */
+.b-nertz { background:linear-gradient(145deg,#041820 0%,#082C3C 60%,#041820 100%); border:1px solid #0E4868; }
+.b-nertz::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse 85% 60% at 50% 0%,rgba(6,182,212,.22) 0%,transparent 70%); }
+.nz-suits { font-size:28px; letter-spacing:8px; position:relative; margin-bottom:8px; }
+.nz-word  { font-size:54px; font-weight:900; letter-spacing:.08em; position:relative; color:#06B6D4; text-shadow:0 0 32px rgba(6,182,212,.6),0 2px 4px rgba(0,0,0,.9); }
+.nz-tag   { font-size:10px; letter-spacing:.18em; text-transform:uppercase; margin-top:6px; position:relative; color:rgba(6,182,212,.4); }
 
 /* ── TYPOGRAPHY ─────────────────────────────────────── */
 .pg-title  { font-size:22px; font-weight:900; letter-spacing:-.03em; }
@@ -300,18 +306,20 @@ const AV = ['#2563EB','#16A34A','#DC2626','#9333EA','#D97706','#0891B2','#DB2777
 const GAME_LIST = [
   { key:'flip7',   label:'🃏  Flip 7'        },
   { key:'farkle',  label:'🎲  Farkle'         },
+  { key:'nertz',   label:'♠  Nertz'           },
   { key:'phase10', label:'🔢  Phase 10'       },
   { key:'general', label:'🎯  General Games'  },
 ];
 
 const CFG = {
-  flip7:   { defWin:200,   winLbl:'Score to win',             hasPhases:false, hasRules:false, hi:true  },
-  farkle:  { defWin:10000, winLbl:'Score to win',             hasPhases:false, hasRules:true,  hi:true  },
-  phase10: { defWin:0,     winLbl:'',                         hasPhases:true,  hasRules:false, hi:false },
+  flip7:   { defWin:200,   winLbl:'Score to win',              hasPhases:false, hasRules:false, hi:true  },
+  farkle:  { defWin:10000, winLbl:'Score to win',              hasPhases:false, hasRules:true,  hi:true  },
+  nertz:   { defWin:100,   winLbl:'Score to win',              hasPhases:false, hasRules:true,  hi:true  },
+  phase10: { defWin:0,     winLbl:'',                          hasPhases:true,  hasRules:false, hi:false },
   general: { defWin:0,     winLbl:'Win score (0 = manual end)',hasPhases:false, hasRules:false, hi:true  },
 };
 
-const RULES = [
+const FARKLE_RULES = [
   ['Single Five','50 pts'],['Single One','100 pts'],
   ['Three 1s','300 pts'],['Three 2s','200 pts'],['Three 3s','300 pts'],
   ['Three 4s','400 pts'],['Three 5s','500 pts'],['Three 6s','600 pts'],
@@ -319,6 +327,13 @@ const RULES = [
   ['Six of any number','3,000 pts'],['1–6 Straight','1,500 pts'],
   ['Three pairs','1,500 pts'],['Four of any + a pair','1,500 pts'],
   ['Two triplets','2,500 pts'],
+];
+
+const NERTZ_RULES = [
+  ['Each card played to a foundation pile','+1 pt'],
+  ['Each card remaining in your Nertz pile','−2 pts'],
+  ['Round ends when someone calls "Nertz!"',''],
+  ['Tiebreaker: most cards played wins',''],
 ];
 
 const PHASES = [
@@ -337,15 +352,15 @@ let tab = 'players';  // 'players' | 'games'
 
 let S = {
   players: [],
-  games: { flip7:null, farkle:null, phase10:null, general:null }
+  games: { flip7:null, farkle:null, nertz:null, phase10:null, general:null }
 };
 
 const U = {
-  selectedGame: 'flip7',           // active game key
+  selectedGame: 'flip7',
   exp: {}, showRules: false,
-  ws:  { flip7:200, farkle:10000, phase10:0, general:0 },
-  sel: { flip7:[], farkle:[], phase10:[], general:[] },
-  rv:  { flip7:null, farkle:null, phase10:null, general:null },
+  ws:  { flip7:200, farkle:10000, nertz:100, phase10:0, general:0 },
+  sel: { flip7:[], farkle:[], nertz:[], phase10:[], general:[] },
+  rv:  { flip7:null, farkle:null, nertz:null, phase10:null, general:null },
   generalName: '',
   generalHi: true,
 };
@@ -393,6 +408,12 @@ function brand(k) {
     <div class="brand b-p10">
       <div class="p10-main"><span class="p10-phase">PHASE</span><span class="p10-ten">10</span></div>
       <div class="p10-tag">Score Tracker · Complete all 10 phases to win</div>
+    </div>`;
+  if (k === 'nertz') return `
+    <div class="brand b-nertz">
+      <div class="nz-suits">♠ ♥ ♦ ♣</div>
+      <div class="nz-word">NERTZ!</div>
+      <div class="nz-tag">Score Tracker · Race to ${U.ws.nertz||100} pts</div>
     </div>`;
   if (k === 'general') {
     const g = S.games.general;
@@ -446,8 +467,11 @@ function renderPlayers() {
 }
 
 // ─── SETUP ───────────────────────────────────────────
-function rulesHtml() {
-  return `<div class="rules-grid">${RULES.map(([c,p]) => `<div class="r-row"><span>${esc(c)}</span><span class="r-pts">${esc(p)}</span></div>`).join('')}</div>`;
+function rulesHtml(k) {
+  const rows = k === 'nertz' ? NERTZ_RULES : FARKLE_RULES;
+  return `<div class="rules-grid">${rows.map(([c,p]) =>
+    `<div class="r-row"><span>${esc(c)}</span>${p ? `<span class="r-pts">${esc(p)}</span>` : ''}</div>`
+  ).join('')}</div>`;
 }
 
 function renderSetup(k) {
@@ -471,9 +495,9 @@ function renderSetup(k) {
 
   if (c.hasRules) {
     h += `<div class="mb14">
-      <button class="rules-btn" id="rb"><span>🎲 Scoring reference</span>
+      <button class="rules-btn" id="rb"><span>${k==='nertz'?'♠':'🎲'} Scoring reference</span>
         <span style="font-size:11px;color:var(--muted)">${U.showRules?'▲ hide':'▼ show'}</span></button>
-      ${U.showRules ? rulesHtml() : ''}
+      ${U.showRules ? rulesHtml(k) : ''}
     </div>`;
   }
 
@@ -517,6 +541,7 @@ function renderActive(k) {
 
   if (k==='flip7')  U.ws.flip7  = g.winScore || 200;
   if (k==='farkle') U.ws.farkle = g.winScore || 10000;
+  if (k==='nertz')  U.ws.nertz  = g.winScore || 100;
 
   let h = brand(k);
 
@@ -532,9 +557,9 @@ function renderActive(k) {
   </div>`;
 
   if (c.hasRules) {
-    h += `<div class="mb14"><button class="rules-btn" id="rb"><span>🎲 Scoring reference</span>
+    h += `<div class="mb14"><button class="rules-btn" id="rb"><span>${k==='nertz'?'♠':'🎲'} Scoring reference</span>
       <span style="font-size:11px;color:var(--muted)">${U.showRules?'▲ hide':'▼ show'}</span></button>
-      ${U.showRules ? rulesHtml() : ''}
+      ${U.showRules ? rulesHtml(k) : ''}
     </div>`;
   }
 
