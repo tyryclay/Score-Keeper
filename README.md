@@ -1,43 +1,48 @@
 # 🎮 Game Night Tracker
 
-Score tracker for **Flip 7**, **Farkle**, **Phase 10**, and **any other game** — built as a single HTML file with no dependencies, works offline.
+A React + Next.js score tracker for **Flip 7**, **Farkle**, **Nertz**, **Phase 10**, and **General Games**.
 
 ## Features
-- Global player roster saved across all games and sessions
-- Round-by-round scoring with navigable history (← → to edit any past round)
-- Phase tracking for Phase 10
-- Farkle scoring reference built in
-- General Games tab for any game — name it, set highest or lowest wins, set a win score or end manually
-- Auto-detects winner; recalculates if you edit past rounds
-- Works offline after first load
-- Mobile-friendly (iPhone 16 / iOS 18, Android)
+
+- **Players tab** — global roster with per-player stats: wins, games played, win rate, points, per-game breakdown, and recent game history
+- **Games tab** — dropdown to switch between all 5 games; each game keeps its own state independently
+- **Full persistence** — saves automatically on every change *and* on window close, so closing the app accidentally never loses your game
+- **Round navigation** — ← → arrows to browse and edit any past round; "Save changes" recalculates totals and winner
+- **Light / dark mode** — toggle in the top-right corner, preference saved across sessions
+- **Game history** — completed games are saved automatically when a winner is declared; feeds the stats system
+- Works offline after first load; mobile-first design tested on iPhone 16 / iOS 18
 
 ---
 
-## 🚀 First-time deploy to GitHub + Vercel
+## Tech stack
+
+**React + Next.js 14** (JavaScript — not Java). This is a proper React web app:
+- `pages/index.js` — all components
+- `styles/globals.css` — CSS variables for all 6 themes × 2 modes
+- No database needed — all data lives in the browser's `localStorage`
+
+---
+
+## First-time deploy
 
 ### 1. Push to GitHub
 ```bash
+npm install          # installs Next.js locally for development
 git init
 git add .
 git commit -m "initial commit"
 gh repo create game-night-tracker --public --push --source=.
 ```
-Or go to github.com → New repository → upload the files manually.
 
 ### 2. Deploy on Vercel
 1. Go to [vercel.com](https://vercel.com) → **Add New Project**
 2. Import your GitHub repo
-3. Leave all settings as defaults — Vercel detects the static file automatically
-4. Click **Deploy**
-
-You'll get a live URL like `https://game-night-tracker.vercel.app` in about 30 seconds.
+3. Vercel auto-detects Next.js — leave all settings as defaults
+4. Click **Deploy** → live in ~60 seconds
 
 ---
 
-## 🔄 How to update after making changes
-
-Once the GitHub repo and Vercel are connected, updating is two commands:
+## Updating after changes
 
 ```bash
 git add .
@@ -45,17 +50,20 @@ git commit -m "describe your change"
 git push
 ```
 
-That's it. Vercel watches your GitHub repo and **auto-deploys on every push** — no login, no manual steps. The live URL stays the same.
+Vercel auto-deploys on every push. The URL never changes.
 
-### If you're editing files directly on GitHub.com
-1. Open the file on github.com and click the pencil ✏️ icon
-2. Make your changes and click **Commit changes**
-3. Vercel picks it up automatically within ~30 seconds
+### Editing directly on GitHub
+1. Open the file → click ✏️ pencil icon
+2. Make changes → **Commit changes**
+3. Vercel picks it up in ~30 seconds
 
 ---
 
-## Sharing
-Send the Vercel URL to anyone — works in any modern browser on phone or desktop. Each device stores its own game data locally via `localStorage`.
+## Local development
 
-## Local use (no server needed)
-Just open `index.html` directly in any browser by double-clicking it.
+```bash
+npm install
+npm run dev      # opens http://localhost:3000
+```
+
+Requires Node.js 18+. Download at [nodejs.org](https://nodejs.org).
