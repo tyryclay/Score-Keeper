@@ -572,7 +572,7 @@ function ActiveGame({ gameKey, game, players, onUpdate, onNewGame, showRules, on
           <div style={{flex:1,textAlign:'center'}}>
             {isNew
               ? <div className="rnd-lbl">NEW ROUND {rn}</div>
-              : <><div className="rnd-lbl">ROUND {vi+1} <span style={{opacity:.45}}>/ {total}</span></div><div className="rnd-sub">EDITING</div></>}
+              : <><div className="rnd-lbl">ROUND {vi+1} <span style={{opacity:.45}}>/ {total}</span></div><div className="rnd-sub">Editing</div></>}
           </div>
           <button className="rnd-nav" disabled={vi>=maxIdx} onClick={() => { onRoundView(vi+1); setInputs({}); }}>&rarr;</button>
         </div>
