@@ -572,7 +572,7 @@ function ActiveGame({ gameKey, game, players, onUpdate, onNewGame, showRules, on
           <div style={{flex:1,textAlign:'center'}}>
             {isNew
               ? <div className="rnd-lbl">NEW ROUND {rn}</div>
-              : <><div className="rnd-lbl">ROUND {vi+1} <span style={{opacity:.45}}>/ {total}</span></div><div className="rnd-sub">&amp;#9999; EDITING</div></>}
+              : <><div className="rnd-lbl">ROUND {vi+1} <span style={{opacity:.45}}>/ {total}</span></div><div className="rnd-sub">✏ EDITING</div></>}
           </div>
           <button className="rnd-nav" disabled={vi>=maxIdx} onClick={() => { onRoundView(vi+1); setInputs({}); }}>&rarr;</button>
         </div>
@@ -595,7 +595,7 @@ function ActiveGame({ gameKey, game, players, onUpdate, onNewGame, showRules, on
         })}
         {isNew
           ? <button className="btn mt8" onClick={submitRound}>Submit round {rn}</button>
-          : <button className="btn-edit" onClick={saveRound}>&checkmark; Save changes</button>}
+          : <button className="btn-edit" onClick={saveRound}>✓ Save changes</button>}
       </div>
 
       {wp && <button className="btn mt12" onClick={onNewGame}>Start new game</button>}
