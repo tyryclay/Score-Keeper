@@ -160,22 +160,11 @@ body.light .rules-grid{box-shadow:0 1px 4px rgba(0,0,0,.1)}
 
 /* ── GAME PICKER ────────────────────────────────────────*/
 .picker-wrap{position:relative;margin-bottom:20px}
-.game-picker{ -webkit-appearance: none; 
-             -moz-appearance: none; 
-             appearance: none; 
-             
-             width: 100%; 
-             padding: 16px 52px 16px 20px; 
-             background: var(--surf); 
-             border: 2px solid var(--bdr); 
-             border-radius: 14px; 
-             color: var(--txt); 
-             font-family: inherit; 
-             font-size: 20px; 
-             font-weight: 800; 
-             outline: none; 
-             cursor: pointer; 
-            }
+.game-picker:focus{border-color:var(--acc)}
+.picker-arrow{
+  position:absolute;right:18px;top:50%;transform:translateY(-50%);
+  font-size:18px;color:var(--muted);pointer-events:none;
+}
 
 /* ── BRAND HEADERS (always dark — visual identity) ──────*/
 .brand{border-radius:16px;padding:22px 18px 18px;margin-bottom:18px;text-align:center;position:relative;overflow:hidden}
