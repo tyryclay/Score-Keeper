@@ -146,7 +146,8 @@ if (gameKey === 'flip7') return (
       src="/flip7-logo.png"
       alt="Flip 7"
       style={{
-        width: 'auto',
+        width: '100%',
+        maxWidth: 320,
         height: 'auto',
         display: 'block',
         margin: '0 auto',
