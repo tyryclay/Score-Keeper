@@ -170,12 +170,11 @@ body.light .rules-grid{box-shadow:0 1px 4px rgba(0,0,0,.1)}
 }
 .game-picker:focus{border-color:var(--acc)}
 .picker-arrow {
-  position: absolute;
-  right: 18px;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-  
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 7px solid var(--muted);
 }
 
 /* ── BRAND HEADERS (always dark — visual identity) ──────*/
