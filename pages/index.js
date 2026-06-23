@@ -740,7 +740,7 @@ function GamesTab({ games, players, history, selectedGame, onGameSelect, onGameU
           <option value="nertz">&#9824;  Nertz</option>
           <option value="phase10">{'\uD83D\uDD22'}  Phase 10</option>
         </select>
-        <span className="picker-arrow">&#8964;</span>
+        <span className="picker-arrow" />
       </div>
       {game ? (
         <ActiveGame
