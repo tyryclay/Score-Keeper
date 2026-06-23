@@ -140,17 +140,22 @@ function DominoSVG() {
 }
 
 function BrandHeader({ gameKey, winScore, gameName }) {
-  if (gameKey === 'flip7') return (
-    <div className="brand b-flip7">
-      <div className="f7-main">
-        <span className="f7-flip">FLIP</span>
-        <div className="f7-card">7</div>
-      </div>
-      <div className="f7-row">
-        {F7_PIPS.map(([n,c]) => <div key={n} className="f7-pip" style={{background:c}}>{n}</div>)}
-      </div>
-    </div>
-  );
+if (gameKey === 'flip7') return (
+  <div className="brand b-flip7">
+    <img
+      src="/flip7-logo.png"
+      alt="Flip 7"
+      style={{
+        width: '100%',
+        maxWidth: 320,
+        height: 'auto',
+        display: 'block',
+        margin: '0 auto',
+        borderRadius: 8,
+      }}
+    />
+  </div>
+);
   if (gameKey === 'farkle') return (
     <div className="brand b-farkle">
       <div className="fk-dice">&#9861; &#9856; &#9860; &#9857; &#9859; &#9858;</div>
