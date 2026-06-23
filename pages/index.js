@@ -5,19 +5,21 @@ import { useState, useEffect } from 'react';
 const AV = ['#2563EB','#16A34A','#DC2626','#9333EA','#D97706','#0891B2','#DB2777','#65A30D'];
 
 const GAME_LIST = [
-  { key:'flip7',   name:'Flip 7'        },
+  { key:'dominoes', name:'Dominoes'     },
   { key:'farkle',  name:'Farkle'        },
+  { key:'flip7',   name:'Flip 7'        },
+  { key:'general', name:'General Games' },
   { key:'nertz',   name:'Nertz'         },
   { key:'phase10', name:'Phase 10'      },
-  { key:'general', name:'General Games' },
 ];
 
 const CFG = {
-  flip7:  {defWin:200,  winLbl:'Score to win',             hasPhases:false,hasRules:false,hi:true },
-  farkle: {defWin:10000,winLbl:'Score to win',             hasPhases:false,hasRules:true, hi:true },
-  nertz:  {defWin:100,  winLbl:'Score to win',             hasPhases:false,hasRules:true, hi:true },
-  phase10:{defWin:0,    winLbl:'',                         hasPhases:true, hasRules:false,hi:false},
-  general:{defWin:0,    winLbl:'Win score (0 = manual end)',hasPhases:false,hasRules:false,hi:true },
+  flip7:    {defWin:200,  winLbl:'Score to win',              hasPhases:false,hasRules:false,hi:false},
+  farkle:   {defWin:10000,winLbl:'Score to win',              hasPhases:false,hasRules:true, hi:true },
+  nertz:    {defWin:100,  winLbl:'Score to win',              hasPhases:false,hasRules:true, hi:true },
+  phase10:  {defWin:0,    winLbl:'',                          hasPhases:true, hasRules:false,hi:false},
+  general:  {defWin:0,    winLbl:'Win score (0 = manual end)',hasPhases:false,hasRules:false,hi:true },
+  dominoes: {defWin:150,  winLbl:'Score to win',              hasPhases:false,hasRules:false,hi:false},
 };
 
 const FARKLE_RULES = [
@@ -92,7 +94,7 @@ function makeGame(selIds, ws, cfg, extra={}) {
 }
 
 function initGamesState() {
-  return { flip7:null, farkle:null, nertz:null, phase10:null, general:null };
+  return { flip7:null, farkle:null, nertz:null, phase10:null, general:null, dominoes:null };
 }
 
 // ── COMPONENTS ───────────────────────────────────────
@@ -118,6 +120,25 @@ function MiniBar({ pct }) {
   );
 }
 
+function DominoSVG() {
+  // A single domino tile showing [3|4] as decorative art
+  const dot = (cx, cy) => <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="5" fill="white" opacity="0.9" />;
+  const leftDots  = [[28,28],[28,52],[28,76],[52,28],[52,76]]; // 5 pips  (top half ≈ [3])
+  const rightDots = [[108,28],[132,28],[108,52],[132,52],[108,76],[132,76]]; // 6 pips (bottom half)
+  return (
+    <svg viewBox="0 0 162 108" width="120" height="80" style={{margin:'0 auto',display:'block',filter:'drop-shadow(0 4px 14px rgba(0,0,0,0.55))'}}>
+      {/* Tile body */}
+      <rect x="2" y="2" width="158" height="104" rx="12" ry="12" fill="#1a1a1a" stroke="#444" strokeWidth="2"/>
+      {/* Dividing line */}
+      <line x1="81" y1="12" x2="81" y2="96" stroke="#555" strokeWidth="2.5"/>
+      {/* Left side — 5 dots */}
+      {[[28,28],[52,52],[28,76],[52,28],[28,52]].map(([cx,cy]) => dot(cx,cy))}
+      {/* Right side — 6 dots */}
+      {[[100,24],[130,24],[100,52],[130,52],[100,80],[130,80]].map(([cx,cy]) => dot(cx,cy))}
+    </svg>
+  );
+}
+
 function BrandHeader({ gameKey, winScore, gameName }) {
   if (gameKey === 'flip7') return (
     <div className="brand b-flip7">
@@ -128,21 +149,18 @@ function BrandHeader({ gameKey, winScore, gameName }) {
       <div className="f7-row">
         {F7_PIPS.map(([n,c]) => <div key={n} className="f7-pip" style={{background:c}}>{n}</div>)}
       </div>
-      <div className="b-tag">Score Tracker &middot; Race to {winScore||200} pts</div>
     </div>
   );
   if (gameKey === 'farkle') return (
     <div className="brand b-farkle">
       <div className="fk-dice">&#9861; &#9856; &#9860; &#9857; &#9859; &#9858;</div>
       <div className="fk-word">FARKLE</div>
-      <div className="fk-tag">Score Tracker &middot; Race to {(winScore||10000).toLocaleString()} pts</div>
     </div>
   );
   if (gameKey === 'nertz') return (
     <div className="brand b-nertz">
       <div className="nz-suits">&#9824; &#9829; &#9830; &#9827;</div>
       <div className="nz-word">NERTZ!</div>
-      <div className="nz-tag">Score Tracker &middot; Race to {winScore||100} pts</div>
     </div>
   );
   if (gameKey === 'phase10') return (
@@ -151,21 +169,24 @@ function BrandHeader({ gameKey, winScore, gameName }) {
         <span className="p10-phase">PHASE</span>
         <span className="p10-ten">10</span>
       </div>
-      <div className="p10-tag">Score Tracker &middot; Complete all 10 phases to win</div>
+    </div>
+  );
+  if (gameKey === 'dominoes') return (
+    <div className="brand b-dominoes">
+      <DominoSVG />
+      <div className="dom-word">DOMINOES</div>
     </div>
   );
   if (gameKey === 'general') {
     return gameName ? (
       <div className="brand b-general">
         <div className="gen-gname">{gameName}</div>
-        <div className="gen-tag">General Games &middot; Score Tracker</div>
       </div>
     ) : (
       <div className="brand b-general">
         <div className="gen-icons">&#127919; &#9822; &#127922; &#127921; &#127918;</div>
         <div className="gen-title">GENERAL</div>
         <div className="gen-sub">GAMES</div>
-        <div className="gen-tag">Any game, any rules</div>
       </div>
     );
   }
@@ -280,7 +301,7 @@ function PlayerCard({ player, idx, history, players, onRemove }) {
           <div style={{fontWeight:600,fontSize:16}}>{player.name}</div>
           {s.played > 0 && (
             <div style={{fontSize:12,color:'var(--muted)',marginTop:2}}>
-              {'\uD83C\uDFC6'} {s.wins}W &middot; {s.played}G &middot; {Math.round((s.wins/s.played)*100)}% win rate
+              {'\uD83C\uDFC6'} {s.wins}W · {s.played}G · {Math.round((s.wins/s.played)*100)}% win rate
             </div>
           )}
         </div>
@@ -290,7 +311,7 @@ function PlayerCard({ player, idx, history, players, onRemove }) {
         </button>
         <button onClick={() => onRemove(player.id)}
           style={{color:'var(--muted)',fontSize:22,padding:'4px 8px',minWidth:44,minHeight:44,display:'flex',alignItems:'center',justifyContent:'center',touchAction:'manipulation'}}>
-          &times;
+          ×
         </button>
       </div>
       {open && <StatsPanel player={player} history={history} players={players} />}
@@ -308,9 +329,9 @@ function PlayersTab({ players, history, onAdd, onRemove }) {
   return (
     <div>
       <div className="pg-title">Players</div>
-      <div className="pg-sub">Your roster &mdash; stats tracked across all games.</div>
+      <div className="pg-sub">Your roster — stats tracked across all games.</div>
       <div style={{display:'flex',gap:8,marginBottom:20}}>
-        <input type="text" className="txt-inp" style={{flex:1}} placeholder="Enter name&hellip;"
+        <input type="text" className="txt-inp" style={{flex:1}} placeholder="Enter name…"
           value={name} onChange={e => setName(e.target.value)}
           onKeyDown={e => e.key==='Enter' && add()}
           autoComplete="off" autoCorrect="off" autoCapitalize="words" />
@@ -335,7 +356,7 @@ function PlayersTab({ players, history, onAdd, onRemove }) {
 }
 
 // ── GAME SETUP ───────────────────────────────────────
-function GameSetup({ gameKey, players, selIds, onTogglePlayer, winScore, onWinScore, generalName, onGeneralName, generalHi, onDirection, onStart, showRules, onToggleRules }) {
+function GameSetup({ gameKey, players, selIds, onTogglePlayer, winScore, onWinScore, generalName, onGeneralName, generalHi, onDirection, dominoesHi, onDominoesDirection, onStart, showRules, onToggleRules }) {
   const c = CFG[gameKey];
   const ok = selIds.length >= 2;
   return (
@@ -345,18 +366,27 @@ function GameSetup({ gameKey, players, selIds, onTogglePlayer, winScore, onWinSc
         <>
           <div className="mb16">
             <div className="sec-lbl">GAME NAME</div>
-            <input type="text" className="txt-inp" placeholder="e.g. Catan, Yahtzee, Uno&hellip;"
+            <input type="text" className="txt-inp" placeholder="e.g. Catan, Yahtzee, Uno…"
               value={generalName} onChange={e => onGeneralName(e.target.value)}
               autoComplete="off" autoCorrect="off" autoCapitalize="words" />
           </div>
           <div className="mb16">
             <div className="sec-lbl">WHO WINS?</div>
             <div className="dir-row">
-              <button className={`dir-btn${generalHi?' on':''}`} onClick={() => onDirection(true)}>{'\uD83D\uDD3C'} Highest score</button>
-              <button className={`dir-btn${!generalHi?' on':''}`} onClick={() => onDirection(false)}>{'\uD83D\uDD3D'} Lowest score</button>
+              <button className={`dir-btn${generalHi?' on':''}`} onClick={() => onDirection(true)}>&#128316; Highest score</button>
+              <button className={`dir-btn${!generalHi?' on':''}`} onClick={() => onDirection(false)}>&#128317; Lowest score</button>
             </div>
           </div>
         </>
+      )}
+      {gameKey === 'dominoes' && (
+        <div className="mb16">
+          <div className="sec-lbl">WHO WINS?</div>
+          <div className="dir-row">
+            <button className={`dir-btn${dominoesHi?' on':''}`} onClick={() => onDominoesDirection(true)}>&#128316; Highest score</button>
+            <button className={`dir-btn${!dominoesHi?' on':''}`} onClick={() => onDominoesDirection(false)}>&#128317; Lowest score</button>
+          </div>
+        </div>
       )}
       {c.hasRules && <RulesPanel gameKey={gameKey} show={showRules} onToggle={onToggleRules} />}
       {!players.length ? (
@@ -398,7 +428,7 @@ function GameSetup({ gameKey, players, selIds, onTogglePlayer, winScore, onWinSc
 function ActiveGame({ gameKey, game, players, onUpdate, onNewGame, showRules, onToggleRules, expandedScores, onToggleScore, roundView, onRoundView, onSaveHistory }) {
   const c = CFG[gameKey];
   const T = calcTotals(game);
-  const hiWins = gameKey==='general' && game.hiWins!==undefined ? game.hiWins : c.hi;
+  const hiWins = (gameKey==='general' || gameKey==='dominoes') && game.hiWins!==undefined ? game.hiWins : c.hi;
   const gp = game.playerIds.map(id => players.find(p=>p.id===id)).filter(Boolean);
   const sorted = [...gp].sort((a,b) => hiWins ? T[b.id]-T[a.id] : T[a.id]-T[b.id]);
   const wp = game.winner ? players.find(p=>p.id===game.winner) : null;
@@ -445,6 +475,8 @@ function ActiveGame({ gameKey, game, players, onUpdate, onNewGame, showRules, on
     setInputs({});
   }
 
+  const [savedFlash, setSavedFlash] = useState(false);
+
   function saveRound() {
     if (vi >= game.rounds.length) return;
     const sc = {};
@@ -452,6 +484,13 @@ function ActiveGame({ gameKey, game, players, onUpdate, onNewGame, showRules, on
     const newRounds = [...game.rounds];
     newRounds[vi] = sc;
     onUpdate(recalc({...game, rounds:newRounds}));
+    // Advance to next round (or new-round slot), with a brief flash
+    setSavedFlash(true);
+    setTimeout(() => {
+      setSavedFlash(false);
+      onRoundView(vi + 1);
+      setInputs({});
+    }, 600);
   }
 
   function changePhase(playerId, delta) {
@@ -492,7 +531,7 @@ function ActiveGame({ gameKey, game, players, onUpdate, onNewGame, showRules, on
         <div className="win-banner">
           <div className="win-trophy">{'\uD83C\uDFC6'}</div>
           <div className="win-name">{wp.name} wins!</div>
-          <div className="win-sub">{game.rounds.length} rounds &middot; {(T[wp.id]||0).toLocaleString()} pts</div>
+          <div className="win-sub">{game.rounds.length} rounds · {(T[wp.id]||0).toLocaleString()} pts</div>
         </div>
       )}
 
@@ -568,13 +607,13 @@ function ActiveGame({ gameKey, game, players, onUpdate, onNewGame, showRules, on
       {/* Round panel */}
       <div className={`rnd-panel${isNew?'':' editing'}`}>
         <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14}}>
-          <button className="rnd-nav" disabled={vi===0} onClick={() => { onRoundView(vi-1); setInputs({}); }}>&larr;</button>
+          <button className="rnd-nav" disabled={vi===0} onClick={() => { onRoundView(vi-1); setInputs({}); }}>←</button>
           <div style={{flex:1,textAlign:'center'}}>
             {isNew
               ? <div className="rnd-lbl">NEW ROUND {rn}</div>
               : <><div className="rnd-lbl">ROUND {vi+1} <span style={{opacity:.45}}>/ {total}</span></div><div className="rnd-sub">✏ EDITING</div></>}
           </div>
-          <button className="rnd-nav" disabled={vi>=maxIdx} onClick={() => { onRoundView(vi+1); setInputs({}); }}>&rarr;</button>
+          <button className="rnd-nav" disabled={vi>=maxIdx} onClick={() => { onRoundView(vi+1); setInputs({}); }}>→</button>
         </div>
         {gp.map((p,i) => {
           const pi = players.findIndex(pl=>pl.id===p.id);
@@ -595,7 +634,10 @@ function ActiveGame({ gameKey, game, players, onUpdate, onNewGame, showRules, on
         })}
         {isNew
           ? <button className="btn mt8" onClick={submitRound}>Submit round {rn}</button>
-          : <button className="btn-edit" onClick={saveRound}>✓ Save changes</button>}
+          : <button className="btn-edit" onClick={saveRound}
+              style={savedFlash ? {background:'var(--acc)',color:'var(--fg)',transition:'background .15s,color .15s'} : {}}>
+              {savedFlash ? '✓ Saved!' : '✓ Save changes'}
+            </button>}
       </div>
 
       {wp && <button className="btn mt12" onClick={onNewGame}>Start new game</button>}
@@ -605,10 +647,11 @@ function ActiveGame({ gameKey, game, players, onUpdate, onNewGame, showRules, on
 
 // ── GAMES TAB ────────────────────────────────────────
 function GamesTab({ games, players, history, selectedGame, onGameSelect, onGameUpdate, onNewGame, onSaveHistory }) {
-  const [selIds, setSelIds]     = useState({flip7:[],farkle:[],nertz:[],phase10:[],general:[]});
-  const [winScores, setWinScores] = useState({flip7:200,farkle:10000,nertz:100,phase10:0,general:0});
+  const [selIds, setSelIds]       = useState({flip7:[],farkle:[],nertz:[],phase10:[],general:[],dominoes:[]});
+  const [winScores, setWinScores] = useState({flip7:200,farkle:10000,nertz:100,phase10:0,general:0,dominoes:150});
   const [generalName, setGenName] = useState('');
-  const [generalHi, setGenHi]   = useState(true);
+  const [generalHi, setGenHi]     = useState(true);
+  const [dominoesHi, setDomHi]    = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [expandedScores, setExpScores] = useState({});
   const [roundView, setRoundView] = useState({});
@@ -628,7 +671,11 @@ function GamesTab({ games, players, history, selectedGame, onGameSelect, onGameU
     const sel = selIds[gk];
     if (sel.length < 2) return;
     const ws = c.hasPhases ? 0 : (winScores[gk] || 0);
-    const extra = gk==='general' ? {gameName:generalName.trim()||'General Game', hiWins:generalHi} : {};
+    const extra = gk==='general'
+      ? {gameName:generalName.trim()||'General Game', hiWins:generalHi}
+      : gk==='dominoes'
+      ? {hiWins:dominoesHi}
+      : {};
     onGameUpdate(gk, makeGame(sel, ws, c, extra));
     setRoundView(prev => ({...prev, [gk]: null}));
     setExpScores({});
@@ -653,13 +700,14 @@ function GamesTab({ games, players, history, selectedGame, onGameSelect, onGameU
       <div className="picker-wrap">
         <select className="game-picker" value={gk}
           onChange={e => { onGameSelect(e.target.value); setShowRules(false); setExpScores({}); }}>
-          <option value="flip7">{'\uD83C\uDCCF'}  Flip 7</option>
+          <option value="dominoes">&#9646;  Dominoes</option>
           <option value="farkle">{'\uD83C\uDFB2'}  Farkle</option>
-          <option value="nertz">&spades;  Nertz</option>
-          <option value="phase10">{'\uD83D\uDD22'}  Phase 10</option>
+          <option value="flip7">{'\uD83C\uDCCF'}  Flip 7</option>
           <option value="general">{'\uD83C\uDFAF'}  General Games</option>
+          <option value="nertz">&#9824;  Nertz</option>
+          <option value="phase10">{'\uD83D\uDD22'}  Phase 10</option>
         </select>
-        <span className="picker-arrow">&or;</span>
+        <span className="picker-arrow">&#8964;</span>
       </div>
       {game ? (
         <ActiveGame
@@ -682,6 +730,7 @@ function GamesTab({ games, players, history, selectedGame, onGameSelect, onGameU
           onWinScore={v => setWinScores(prev => ({...prev,[gk]:v}))}
           generalName={generalName} onGeneralName={setGenName}
           generalHi={generalHi} onDirection={setGenHi}
+          dominoesHi={dominoesHi} onDominoesDirection={setDomHi}
           onStart={startGame}
           showRules={showRules} onToggleRules={() => setShowRules(r=>!r)}
         />
@@ -753,7 +802,7 @@ export default function App() {
     setHistory(prev => [entry, ...prev.slice(0,99)]);
   }
 
-  if (!loaded) return <div className="loading">Loading&hellip;</div>;
+  if (!loaded) return <div className="loading">Loading…</div>;
 
   return (
     <>
