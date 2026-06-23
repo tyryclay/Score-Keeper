@@ -737,7 +737,7 @@ function GamesTab({ games, players, history, selectedGame, onGameSelect, onGameU
           <option value="farkle">{'\uD83C\uDFB2'}  Farkle</option>
           <option value="flip7">{'\uD83C\uDCCF'}  Flip 7</option>
           <option value="general">{'\uD83C\uDFAF'}  General Games</option>
-          <option value="nertz">&#9824;  Nertz</option>
+          <option value="nertz">Nertz &#9824;</option>
           <option value="phase10">{'\uD83D\uDD22'}  Phase 10</option>
         </select>
         <span className="picker-arrow" />
