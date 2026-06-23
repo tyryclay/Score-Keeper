@@ -157,11 +157,21 @@ if (gameKey === 'flip7') return (
   </div>
 );
   if (gameKey === 'farkle') return (
-    <div className="brand b-farkle">
-      <div className="fk-dice">&#9861; &#9856; &#9860; &#9857; &#9859; &#9858;</div>
-      <div className="fk-word">FARKLE</div>
-    </div>
-  );
+  <div className="brand b-farkle">
+    <img
+      src="/farkle-logo.png"
+      alt="Farkle"
+      style={{
+        width: '100%',
+        maxWidth: 320,
+        height: 'auto',
+        display: 'block',
+        margin: '0 auto',
+        borderRadius: 8,
+      }}
+    />
+  </div>
+);
   if (gameKey === 'nertz') return (
     <div className="brand b-nertz">
       <div className="nz-suits">&#9824; &#9829; &#9830; &#9827;</div>
