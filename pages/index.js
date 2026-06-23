@@ -733,10 +733,10 @@ function GamesTab({ games, players, history, selectedGame, onGameSelect, onGameU
       <div className="picker-wrap">
         <select className="game-picker" value={gk}
           onChange={e => { onGameSelect(e.target.value); setShowRules(false); setExpScores({}); }}>
-          <option value="dominoes">&#9646;  Dominoes</option>
-          <option value="farkle">{'\uD83C\uDFB2'}  Farkle</option>
-          <option value="flip7">{'\uD83C\uDCCF'}  Flip 7</option>
-          <option value="general">{'\uD83C\uDFAF'}  General Games</option>
+          <option value="dominoes">Dominoes 🁣;</option>
+          <option value="farkle">Farkle {'\uD83C\uDFB2'}</option>
+          <option value="flip7">Flip 7 {'\uD83C\uDCCF'}</option>
+          <option value="general">General Games {'\uD83C\uDFAF'}</option>
           <option value="nertz">Nertz &#9824;</option>
           <option value="phase10">{'\uD83D\uDD22'}  Phase 10</option>
         </select>
