@@ -197,8 +197,8 @@ body.light .rules-grid{box-shadow:0 1px 4px rgba(0,0,0,.1)}
 .fk-word{font-size:52px;font-weight:900;font-style:italic;letter-spacing:.14em;position:relative;color:#D4A824;text-shadow:0 0 32px rgba(212,168,36,.65),0 2px 4px rgba(0,0,0,.8)}
 .b-nertz{background:linear-gradient(145deg,#041820 0%,#082C3C 60%,#041820 100%);border:1px solid #0E4868}
 .b-nertz::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 85% 60% at 50% 0%,rgba(6,182,212,.22) 0%,transparent 70%)}
-.nz-suits{font-size:28px;letter-spacing:8px;position:relative;margin-bottom:8px}
 .nz-word{font-size:54px;font-weight:900;letter-spacing:.08em;position:relative;color:#06B6D4;text-shadow:0 0 32px rgba(6,182,212,.6),0 2px 4px rgba(0,0,0,.9)}
+.nz-suits{font-size:28px;letter-spacing:8px;position:relative;margin-bottom:8px}
 .b-p10{background:linear-gradient(145deg,#0C2878 0%,#103298 60%,#0C2878 100%);border:1px solid #1E4CC0}
 .b-p10::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 75% 65% at 22% 50%,rgba(212,26,26,.28) 0%,transparent 55%),radial-gradient(ellipse 75% 65% at 78% 50%,rgba(255,215,0,.18) 0%,transparent 55%)}
 .p10-main{display:flex;align-items:baseline;justify-content:center;gap:14px;position:relative}
