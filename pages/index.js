@@ -180,12 +180,20 @@ if (gameKey === 'flip7') return (
   );
   if (gameKey === 'phase10') return (
     <div className="brand b-p10">
-      <div className="p10-main">
-        <span className="p10-phase">PHASE</span>
-        <span className="p10-ten">10</span>
-      </div>
-    </div>
-  );
+       <img
+      src="/phase101-logo.png"
+      alt="Phase 10"
+      style={{
+        width: '100%',
+        maxWidth: 320,
+        height: 'auto',
+        display: 'block',
+        margin: '0 auto',
+        borderRadius: 8,
+      }}
+    />
+  </div>
+);
   if (gameKey === 'dominoes') return (
     <div className="brand b-dominoes">
       <DominoSVG />
