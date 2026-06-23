@@ -735,10 +735,10 @@ function GamesTab({ games, players, history, selectedGame, onGameSelect, onGameU
           onChange={e => { onGameSelect(e.target.value); setShowRules(false); setExpScores({}); }}>
           <option value="dominoes">Dominoes 🀴</option>
           <option value="farkle">Farkle {'\uD83C\uDFB2'}</option>
-          <option value="flip7">Flip 7️⃣</option>
+          <option value="flip7">Flip 7 7️⃣</option>
           <option value="general">General Games {'\uD83C\uDFAF'}</option>
           <option value="nertz">Nertz &#9824;</option>
-          <option value="phase10">Phase 🔟</option>
+          <option value="phase10">Phase 10 🔟</option>
         </select>
         <span className="picker-arrow" />
       </div>
