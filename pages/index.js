@@ -181,7 +181,7 @@ if (gameKey === 'flip7') return (
   if (gameKey === 'phase10') return (
     <div className="brand b-p10">
        <img
-      src="/phase101-logo.png"
+      src="/phase10-logo.png"
       alt="Phase 10"
       style={{
         width: '100%',
