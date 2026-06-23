@@ -196,10 +196,20 @@ if (gameKey === 'flip7') return (
 );
   if (gameKey === 'dominoes') return (
     <div className="brand b-dominoes">
-      <DominoSVG />
-      <div className="dom-word">DOMINOES</div>
-    </div>
-  );
+        <img
+      src="/dominoes-logo.png"
+      alt="Dominoes"
+      style={{
+        width: '100%',
+        maxWidth: 320,
+        height: 'auto',
+        display: 'block',
+        margin: '0 auto',
+        borderRadius: 8,
+      }}
+    />
+  </div>
+);
   if (gameKey === 'general') {
     return gameName ? (
       <div className="brand b-general">
