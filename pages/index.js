@@ -141,34 +141,20 @@ function DominoSVG() {
 
 function BrandHeader({ gameKey, winScore, gameName }) {
 if (gameKey === 'flip7') return (
-  <div className="brand b-flip7">
+  <div style={{marginBottom:18,textAlign:'center'}}>
     <img
       src="/flip7-logo.png"
       alt="Flip 7"
-      style={{
-        width: '100%',
-        maxWidth: 320,
-        height: 'auto',
-        display: 'block',
-        margin: '0 auto',
-        borderRadius: 8,
-      }}
+      style={{width:'100%',maxWidth:320,height:'auto',display:'block',margin:'0 auto'}}
     />
   </div>
 );
   if (gameKey === 'farkle') return (
-  <div className="brand b-farkle">
+  <div style={{marginBottom:18,textAlign:'center'}}>
     <img
       src="/farkle-logo.png"
       alt="Farkle"
-      style={{
-        width: '100%',
-        maxWidth: 320,
-        height: 'auto',
-        display: 'block',
-        margin: '0 auto',
-        borderRadius: 8,
-      }}
+      style={{width:'100%',maxWidth:320,height:'auto',display:'block',margin:'0 auto'}}
     />
   </div>
 );
@@ -179,34 +165,20 @@ if (gameKey === 'flip7') return (
     </div>
   );
   if (gameKey === 'phase10') return (
-    <div className="brand b-p10">
-       <img
+  <div style={{marginBottom:18,textAlign:'center'}}>
+    <img
       src="/phase10-logo.png"
       alt="Phase 10"
-      style={{
-        width: '100%',
-        maxWidth: 320,
-        height: 'auto',
-        display: 'block',
-        margin: '0 auto',
-        borderRadius: 8,
-      }}
+      style={{width:'100%',maxWidth:320,height:'auto',display:'block',margin:'0 auto'}}
     />
   </div>
 );
   if (gameKey === 'dominoes') return (
-    <div className="brand b-dominoes">
-        <img
+  <div style={{marginBottom:18,textAlign:'center'}}>
+    <img
       src="/dominoes-logo.png"
       alt="Dominoes"
-      style={{
-        width: '100%',
-        maxWidth: 320,
-        height: 'auto',
-        display: 'block',
-        margin: '0 auto',
-        borderRadius: 8,
-      }}
+      style={{width:'100%',maxWidth:320,height:'auto',display:'block',margin:'0 auto'}}
     />
   </div>
 );
