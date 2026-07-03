@@ -14,7 +14,7 @@ const GAME_LIST = [
 ];
 
 const CFG = {
-  flip7:    {defWin:200,  winLbl:'Score to win',              hasPhases:false,hasRules:false,hi:false},
+  flip7:    {defWin:200,  winLbl:'Score to win',              hasPhases:false,hasRules:false,hi:true},
   farkle:   {defWin:10000,winLbl:'Score to win',              hasPhases:false,hasRules:true, hi:true },
   nertz:    {defWin:100,  winLbl:'Score to win',              hasPhases:false,hasRules:true, hi:true },
   phase10:  {defWin:0,    winLbl:'',                          hasPhases:true, hasRules:false,hi:false},
@@ -429,8 +429,33 @@ function GameSetup({ gameKey, players, selIds, onTogglePlayer, winScore, onWinSc
   );
 }
 
+// ── CONFIRM MODAL ────────────────────────────────────
+function ConfirmModal({ message, onConfirm, onCancel }) {
+  return (
+    <div style={{
+      position:'fixed',inset:0,zIndex:999,
+      background:'rgba(0,0,0,.55)',backdropFilter:'blur(4px)',
+      display:'flex',alignItems:'center',justifyContent:'center',padding:24,
+    }}>
+      <div style={{
+        background:'var(--surf)',border:'1px solid var(--bdr)',borderRadius:16,
+        padding:'28px 24px',maxWidth:320,width:'100%',textAlign:'center',
+        boxShadow:'0 8px 40px rgba(0,0,0,.5)',
+      }}>
+        <div style={{fontSize:36,marginBottom:12}}>⚠️</div>
+        <div style={{fontSize:16,fontWeight:700,color:'var(--txt)',marginBottom:8}}>{message}</div>
+        <div style={{fontSize:13,color:'var(--muted)',marginBottom:24}}>This cannot be undone.</div>
+        <div style={{display:'flex',gap:10}}>
+          <button className="btn-ghost" style={{flex:1,minHeight:48,fontSize:15}} onClick={onCancel}>Cancel</button>
+          <button className="btn" style={{flex:1,background:'#DC2626',minHeight:48,fontSize:15}} onClick={onConfirm}>Yes, continue</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── ACTIVE GAME ──────────────────────────────────────
-function ActiveGame({ gameKey, game, players, onUpdate, onNewGame, showRules, onToggleRules, expandedScores, onToggleScore, roundView, onRoundView, onSaveHistory }) {
+function ActiveGame({ gameKey, game, players, onUpdate, onNewGame, onEndGame, showRules, onToggleRules, expandedScores, onToggleScore, roundView, onRoundView, onSaveHistory }) {
   const c = CFG[gameKey];
   const T = calcTotals(game);
   const hiWins = (gameKey==='general' || gameKey==='dominoes') && game.hiWins!==undefined ? game.hiWins : c.hi;
@@ -438,68 +463,73 @@ function ActiveGame({ gameKey, game, players, onUpdate, onNewGame, showRules, on
   const sorted = [...gp].sort((a,b) => hiWins ? T[b.id]-T[a.id] : T[a.id]-T[b.id]);
   const wp = game.winner ? players.find(p=>p.id===game.winner) : null;
 
-  // Round nav state
-  const total = game.rounds.length;
+  // Games where negative scores are possible
+  const allowNeg = ['flip7','nertz','general'].includes(gameKey);
+
+  // Round nav
+  const total  = game.rounds.length;
   const maxIdx = game.winner ? Math.max(0, total-1) : total;
-  const vi = Math.min(Math.max(0, roundView ?? total), maxIdx);
-  const isNew = vi >= total;
-  const rn = total + 1;
+  const vi     = Math.min(Math.max(0, roundView ?? total), maxIdx);
+  const isNew  = vi >= total;
+  const rn     = total + 1;
 
-  // Inputs tracked locally to avoid re-render on each keystroke
-  const [inputs, setInputs] = useState({});
+  const [inputs,     setInputs]     = useState({});
+  const [negIds,     setNegIds]     = useState({});   // which players are in subtract mode
+  const [savedFlash, setSavedFlash] = useState(false);
+  const [confirm,    setConfirm]    = useState(null); // null | 'newgame' | 'endgame'
 
+  // recalc: never auto-declares winner — End Game button does that manually
   function recalc(updatedGame) {
-    if (c.hasPhases) return updatedGame;
-    if (updatedGame.winScore <= 0 || !updatedGame.rounds.length) return {...updatedGame, winner:null};
-    const tots = calcTotals(updatedGame);
-    const anyOver = gp.some(p => tots[p.id] >= updatedGame.winScore);
-    if (!anyOver) return {...updatedGame, winner:null};
-    const s = [...gp].sort((a,b) => hiWins ? tots[b.id]-tots[a.id] : tots[a.id]-tots[b.id]);
-    const winnerId = s[0].id;
-    if (winnerId !== updatedGame.winner) {
-      onSaveHistory({
-        id: Date.now().toString(),
-        gameKey,
-        displayName: updatedGame.gameName || getGameName(gameKey),
-        date: new Date().toISOString(),
-        playerIds: [...updatedGame.playerIds],
-        winnerId,
-        rounds: updatedGame.rounds.length,
-        finalScores: tots,
-      });
-    }
-    return {...updatedGame, winner:winnerId};
+    return {...updatedGame, winner: updatedGame.winner ?? null};
+  }
+
+  function getRawInput(pid) {
+    const raw = inputs[pid] !== undefined ? inputs[pid] : '';
+    const n   = parseInt(raw) || 0;
+    return negIds[pid] ? -Math.abs(n) : n;
   }
 
   function submitRound() {
     const sc = {};
-    gp.forEach(p => { sc[p.id] = parseInt(inputs[p.id]||'0')||0; });
+    gp.forEach(p => { sc[p.id] = getRawInput(p.id); });
     const updated = recalc({...game, rounds:[...game.rounds, sc]});
     onUpdate(updated);
     onRoundView(updated.rounds.length);
-    setInputs({});
+    setInputs({}); setNegIds({});
   }
-
-  const [savedFlash, setSavedFlash] = useState(false);
 
   function saveRound() {
     if (vi >= game.rounds.length) return;
     const sc = {};
-    gp.forEach(p => { sc[p.id] = parseInt(inputs[p.id]||String(game.rounds[vi][p.id]||0))||0; });
+    gp.forEach(p => {
+      const raw = inputs[p.id] !== undefined ? inputs[p.id] : String(Math.abs(game.rounds[vi][p.id]||0));
+      const n   = parseInt(raw) || 0;
+      sc[p.id]  = negIds[p.id] ? -Math.abs(n) : (game.rounds[vi][p.id] < 0 && inputs[p.id] === undefined ? game.rounds[vi][p.id] : n);
+    });
     const newRounds = [...game.rounds];
     newRounds[vi] = sc;
     onUpdate(recalc({...game, rounds:newRounds}));
-    // Advance to next round (or new-round slot), with a brief flash
     setSavedFlash(true);
-    setTimeout(() => {
-      setSavedFlash(false);
-      onRoundView(vi + 1);
-      setInputs({});
-    }, 600);
+    setTimeout(() => { setSavedFlash(false); onRoundView(vi+1); setInputs({}); setNegIds({}); }, 600);
+  }
+
+  function handleEndGame() {
+    // Declare winner based on current totals and archive
+    const tots = calcTotals(game);
+    const s    = [...gp].sort((a,b) => hiWins ? tots[b.id]-tots[a.id] : tots[a.id]-tots[b.id]);
+    const winnerId = s[0].id;
+    onSaveHistory({
+      id: Date.now().toString(), gameKey,
+      displayName: game.gameName || getGameName(gameKey),
+      date: new Date().toISOString(),
+      playerIds: [...game.playerIds], winnerId,
+      rounds: game.rounds.length, finalScores: tots,
+    });
+    onEndGame();
   }
 
   function changePhase(playerId, delta) {
-    const cur = game.phases[playerId]||1;
+    const cur  = game.phases[playerId]||1;
     const next = Math.max(1, Math.min(11, cur+delta));
     if (next===cur) return;
     const newPhases = {...game.phases, [playerId]:next};
@@ -516,25 +546,50 @@ function ActiveGame({ gameKey, game, players, onUpdate, onNewGame, showRules, on
     onUpdate({...game, phases:newPhases, winner});
   }
 
+  // Which input value to show (absolute value, sign controlled by toggle)
+  function displayVal(pid, roundIdx) {
+    if (inputs[pid] !== undefined) return inputs[pid];
+    if (roundIdx !== undefined && game.rounds[roundIdx]) {
+      return String(Math.abs(game.rounds[roundIdx][pid]||0));
+    }
+    return '';
+  }
+
+  // Initialise negIds when navigating to an existing round with negative scores
+  function initNegIds(roundIdx) {
+    if (roundIdx >= game.rounds.length) { setNegIds({}); return; }
+    const neg = {};
+    gp.forEach(p => { if ((game.rounds[roundIdx][p.id]||0) < 0) neg[p.id] = true; });
+    setNegIds(neg);
+  }
+
   return (
     <div>
+      {confirm && (
+        <ConfirmModal
+          message={confirm==='endgame' ? 'End this game and archive it?' : 'Start a new game? Current game will be lost.'}
+          onConfirm={() => { setConfirm(null); confirm==='endgame' ? handleEndGame() : onNewGame(); }}
+          onCancel={() => setConfirm(null)}
+        />
+      )}
+
       <BrandHeader gameKey={gameKey} winScore={game.winScore} gameName={game.gameName} />
       <div className="hdr-row">
         <div style={{flex:1}} className="game-meta">
           {c.hasPhases
-            ? `Round ${game.rounds.length} \u00b7 First to complete all 10 phases wins`
+            ? `Round ${game.rounds.length} · First to complete all 10 phases wins`
             : game.winScore>0
-            ? `${hiWins?'First to':'Lowest when someone hits'} ${game.winScore.toLocaleString()} pts \u00b7 Round ${game.rounds.length}`
-            : `Round ${game.rounds.length} \u00b7 ${hiWins?'Highest':'Lowest'} score wins`}
+            ? `First to ${game.winScore.toLocaleString()} pts · Round ${game.rounds.length}`
+            : `Round ${game.rounds.length} · ${hiWins?'Highest':'Lowest'} score wins`}
         </div>
-        <button className="btn-ghost" onClick={onNewGame}>New game</button>
+        <button className="btn-ghost" onClick={() => setConfirm('newgame')}>New game</button>
       </div>
 
       {c.hasRules && <RulesPanel gameKey={gameKey} show={showRules} onToggle={onToggleRules} />}
 
       {wp && (
         <div className="win-banner">
-          <div className="win-trophy">{'\uD83C\uDFC6'}</div>
+          <div className="win-trophy">🏆</div>
           <div className="win-name">{wp.name} wins!</div>
           <div className="win-sub">{game.rounds.length} rounds · {(T[wp.id]||0).toLocaleString()} pts</div>
         </div>
@@ -542,16 +597,18 @@ function ActiveGame({ gameKey, game, players, onUpdate, onNewGame, showRules, on
 
       {/* Score cards */}
       {sorted.map((p, idx) => {
-        const isW = game.winner===p.id, isF = idx===0;
-        const hl = isW || (!game.winner && isF);
-        const tot = T[p.id]||0;
-        const pct = game.winScore>0 ? Math.min(100,(tot/game.winScore)*100) : 0;
-        const ph = c.hasPhases ? (game.phases?.[p.id]||1) : null;
+        const isW  = game.winner===p.id, isF = idx===0;
+        const hl   = isW || (!game.winner && isF);
+        const tot  = T[p.id]||0;
+        const pct  = game.winScore>0 ? Math.min(100, Math.max(0, (tot/game.winScore)*100)) : 0;
+        const ph   = c.hasPhases ? (game.phases?.[p.id]||1) : null;
         const phPct = ph ? Math.min(100,((ph-1)/10)*100) : 0;
-        const pi = players.findIndex(pl=>pl.id===p.id);
+        const pi   = players.findIndex(pl=>pl.id===p.id);
         const avBg = hl ? 'var(--acc)' : AV[pi%AV.length];
         const avFg = hl ? 'var(--fg)' : '#fff';
         const isExp = expandedScores[p.id];
+        // Highlight scores at or over threshold
+        const atWin = game.winScore > 0 && tot >= game.winScore;
         return (
           <div key={p.id} className={`sc-card${isW?' win':isF&&!game.winner?' lead':''}`}>
             <div className="sc-body">
@@ -559,23 +616,23 @@ function ActiveGame({ gameKey, game, players, onUpdate, onNewGame, showRules, on
                 <div style={{width:40,height:40,borderRadius:'50%',background:avBg,color:avFg,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:900,fontSize:17,transition:'background .2s'}}>
                   {p.name[0].toUpperCase()}
                 </div>
-                {hl && <span className="sc-crown">{isW?'\uD83C\uDFC6':'\uD83D\uDC51'}</span>}
+                {hl && <span className="sc-crown">{isW?'🏆':'👑'}</span>}
               </div>
               <div className="sc-name-col">
                 <div className="sc-name">{p.name}</div>
                 {c.hasPhases && (
                   <div className="ph-ctrl">
                     <button className="ph-btn minus" onClick={() => changePhase(p.id,-1)} disabled={ph<=1}>-</button>
-                    <div className="ph-badge">{ph<=10?`Phase ${ph}`:'\u2705 Done'}</div>
-                    <button className="ph-btn plus" onClick={() => changePhase(p.id,1)} disabled={ph>10}>+</button>
+                    <div className="ph-badge">{ph<=10?`Phase ${ph}`:'✅ Done'}</div>
+                    <button className="ph-btn plus"  onClick={() => changePhase(p.id,1)} disabled={ph>10}>+</button>
                   </div>
                 )}
               </div>
               <div className="sc-num-col">
-                <div className={`sc-total${hl?' hl':''}`}>{tot.toLocaleString()}</div>
+                <div className={`sc-total${hl?' hl':''}`} style={atWin&&!isW?{color:'var(--gold)'}:{}}>{tot.toLocaleString()}</div>
                 {game.winScore>0 && <div className="sc-of">/ {game.winScore.toLocaleString()}</div>}
               </div>
-              <button className="exp-btn" onClick={() => onToggleScore(p.id)}>{isExp?'\u25b2':'\u25bc'}</button>
+              <button className="exp-btn" onClick={() => onToggleScore(p.id)}>{isExp?'▲':'▼'}</button>
             </div>
             {((game.winScore>0&&!c.hasPhases)||c.hasPhases) && (
               <div className="prog-wrap"><div className="prog-fill" style={{width:`${c.hasPhases?phPct:pct}%`}} /></div>
@@ -585,19 +642,20 @@ function ActiveGame({ gameKey, game, players, onUpdate, onNewGame, showRules, on
                 {c.hasPhases && ph && (
                   <div className="ph-info">
                     <span style={{color:'var(--acc)',fontWeight:700}}>{ph<=10?`Phase ${ph}: `:'All done! '}</span>
-                    <span style={{color:'var(--muted)'}}>{ph<=10?PHASES[ph-1]:'\uD83C\uDF89'}</span>
+                    <span style={{color:'var(--muted)'}}>{ph<=10?PHASES[ph-1]:'🎉'}</span>
                   </div>
                 )}
                 <div className="sec-lbl mb8">ROUND HISTORY</div>
                 {!game.rounds.length
                   ? <div style={{color:'var(--muted)',fontSize:13}}>No rounds yet.</div>
                   : game.rounds.map((r,i) => {
+                      const pts = r[p.id]||0;
                       const run = game.rounds.slice(0,i+1).reduce((s,rr)=>s+(rr[p.id]||0),0);
                       return (
                         <div key={i} className="hist-row">
                           <span style={{color:'var(--muted)'}}>Round {i+1}</span>
                           <div style={{display:'flex',gap:14}}>
-                            <span style={{fontWeight:600}}>+{(r[p.id]||0).toLocaleString()}</span>
+                            <span style={{fontWeight:600,color:pts<0?'#F87171':'inherit'}}>{pts>=0?'+':''}{pts.toLocaleString()}</span>
                             <span style={{color:'var(--muted)',minWidth:52,textAlign:'right'}}>{run.toLocaleString()}</span>
                           </div>
                         </div>
@@ -612,40 +670,70 @@ function ActiveGame({ gameKey, game, players, onUpdate, onNewGame, showRules, on
       {/* Round panel */}
       <div className={`rnd-panel${isNew?'':' editing'}`}>
         <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14}}>
-          <button className="rnd-nav" disabled={vi===0} onClick={() => { onRoundView(vi-1); setInputs({}); }}>←</button>
+          <button className="rnd-nav" disabled={vi===0} onClick={() => { onRoundView(vi-1); setInputs({}); initNegIds(vi-1); }}>←</button>
           <div style={{flex:1,textAlign:'center'}}>
             {isNew
               ? <div className="rnd-lbl">NEW ROUND {rn}</div>
               : <><div className="rnd-lbl">ROUND {vi+1} <span style={{opacity:.45}}>/ {total}</span></div><div className="rnd-sub">✏ EDITING</div></>}
           </div>
-          <button className="rnd-nav" disabled={vi>=maxIdx} onClick={() => { onRoundView(vi+1); setInputs({}); }}>→</button>
+          <button className="rnd-nav" disabled={vi>=maxIdx} onClick={() => { onRoundView(vi+1); setInputs({}); initNegIds(vi+1); }}>→</button>
         </div>
-        {gp.map((p,i) => {
-          const pi = players.findIndex(pl=>pl.id===p.id);
-          const defaultVal = isNew ? '' : String(game.rounds[vi]?.[p.id] ?? 0);
+
+        {gp.map((p) => {
+          const pi       = players.findIndex(pl=>pl.id===p.id);
+          const isNeg    = !!negIds[p.id];
+          const defVal   = displayVal(p.id, isNew ? undefined : vi);
           return (
             <div key={p.id} className="rnd-row">
               <div style={{width:32,height:32,borderRadius:'50%',background:AV[pi%AV.length],color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:900,fontSize:13,flexShrink:0}}>
                 {p.name[0].toUpperCase()}
               </div>
               <span style={{flex:1,fontWeight:600,fontSize:15}}>{p.name}</span>
-              <input className="num-inp" type="text" inputMode="numeric" pattern="[0-9]*"
-                placeholder="0"
-                defaultValue={defaultVal}
-                key={`${vi}-${p.id}`}
-                onChange={e => setInputs(prev => ({...prev, [p.id]: e.target.value}))} />
+              {/* Subtract toggle — only for games that support negative scores */}
+              {allowNeg && (
+                <button
+                  onClick={() => setNegIds(prev => ({...prev, [p.id]:!prev[p.id]}))}
+                  style={{
+                    width:36,height:36,borderRadius:8,flexShrink:0,
+                    background:isNeg?'#DC2626':'var(--surf2)',
+                    color:isNeg?'#fff':'var(--muted)',
+                    fontSize:20,fontWeight:900,display:'flex',alignItems:'center',
+                    justifyContent:'center',transition:'background .15s,color .15s',
+                    border:`1.5px solid ${isNeg?'#DC2626':'var(--bdr)'}`,
+                    touchAction:'manipulation',marginRight:6,
+                  }}
+                  aria-label="Toggle subtract"
+                >−</button>
+              )}
+              <div style={{position:'relative',display:'flex',alignItems:'center'}}>
+                {isNeg && <span style={{position:'absolute',left:10,color:'#F87171',fontWeight:900,fontSize:18,pointerEvents:'none'}}>−</span>}
+                <input className="num-inp" type="text" inputMode="numeric" pattern="[0-9]*"
+                  placeholder="0"
+                  defaultValue={defVal}
+                  key={`${vi}-${p.id}-${isNeg}`}
+                  style={{paddingLeft:isNeg?24:12,color:isNeg?'#F87171':'var(--txt)'}}
+                  onChange={e => setInputs(prev => ({...prev, [p.id]: e.target.value}))} />
+              </div>
             </div>
           );
         })}
+
         {isNew
           ? <button className="btn mt8" onClick={submitRound}>Submit round {rn}</button>
           : <button className="btn-edit" onClick={saveRound}
-              style={savedFlash ? {background:'var(--acc)',color:'var(--fg)',transition:'background .15s,color .15s'} : {}}>
+              style={savedFlash?{background:'var(--acc)',color:'var(--fg)',transition:'background .15s,color .15s'}:{}}>
               {savedFlash ? '✓ Saved!' : '✓ Save changes'}
             </button>}
       </div>
 
-      {wp && <button className="btn mt12" onClick={onNewGame}>Start new game</button>}
+      {/* End Game button — always visible, archives and declares winner */}
+      {!game.winner && game.rounds.length > 0 && (
+        <button className="btn-ghost" style={{width:'100%',marginTop:10,minHeight:48,fontSize:14}}
+          onClick={() => setConfirm('endgame')}>
+          🏁 End game &amp; archive
+        </button>
+      )}
+      {wp && <button className="btn mt12" onClick={() => setConfirm('newgame')}>Start new game</button>}
     </div>
   );
 }
@@ -719,6 +807,7 @@ function GamesTab({ games, players, history, selectedGame, onGameSelect, onGameU
           gameKey={gk} game={game} players={players}
           onUpdate={g => onGameUpdate(gk,g)}
           onNewGame={handleNewGame}
+          onEndGame={() => { onNewGame(gk); }}
           showRules={showRules} onToggleRules={() => setShowRules(r=>!r)}
           expandedScores={expandedScores}
           onToggleScore={id => setExpScores(prev => ({...prev,[id]:!prev[id]}))}
