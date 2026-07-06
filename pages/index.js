@@ -227,12 +227,14 @@ if (gameKey === 'flip7') return (
   </div>
 );
   if (gameKey === 'yahtzee') return (
-    <div className="brand b-yahtzee">
-      <div className="yz-dice">&#9856; &#9857; &#9858; &#9859; &#9860;</div>
-      <div className="yz-word">YAHTZEE!</div>
-      <div className="yz-tag">SCOREPAD</div>
-    </div>
-  );
+  <div style={{marginBottom:18,textAlign:'center'}}>
+    <img
+      src="/yahtzee-logo.png"
+      alt="Yahtzee"
+      style={{width:'100%',maxWidth:320,height:'auto',display:'block',margin:'0 auto'}}
+    />
+  </div>
+);
   if (gameKey === 'general') {
     return gameName ? (
       <div className="brand b-general">
