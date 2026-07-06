@@ -62,14 +62,14 @@ body.t-yahtzee{
   --acc:#f63b3b;--fg:#FFFFFF;
   --txt:#CD1919;--muted:#CC3C46;--bdr:#F5BEBB;
   --gold:#93C5FD;--adim:rgba(246,59,59,.4);--divider:rgba(255,255,255,.07);
-  background-image:radial-gradient(circle,rgba(59,130,246,.05) 1px,transparent 1px);
+  background-image:radial-gradient(circle,rgba(246,59,59,.05) 1px,transparent 1px);
   background-size:22px 22px;
 }
 body.t-dominoes{
   --bg:#1A1008;--surf:#28180A;--surf2:#362010;
   --acc:#F59E0B;--fg:#180C00;
   --txt:#FFF4E0;--muted:#9A7040;--bdr:#4A2E0A;
-  --gold:#F59E0B;--adim:rgba(245,158,11,.4);--divider:rgba(255,255,255,.07);
+  --gold:#CD1919;--adim:rgba(245,158,11,.4);--divider:rgba(255,255,255,.07);
   background-image:repeating-linear-gradient(
     90deg,rgba(245,158,11,.018) 0,rgba(245,158,11,.018) 1px,
     transparent 1px,transparent 32px);
