@@ -131,7 +131,7 @@ body.light.t-yahtzee{
   --bg:#FFF1EF;--surf:#FFFFFF;--surf2:#FADADA;
   --acc:#560A0A;--fg:#FFFFFF;
   --txt:#CD1919;--muted:#CC3C46;--bdr:#F5BEBB;
-  --gold:#1D4ED8;--adim:rgba(29,78,216,.22);--divider:rgba(0,0,0,.08);
+  --gold:#1D4ED8;--adim:rgba(255,00,00,.22);--divider:rgba(0,0,0,.08);
   background-image:none;
 }
 body.light .sc-card,body.light .p-card,body.light .rnd-panel,
