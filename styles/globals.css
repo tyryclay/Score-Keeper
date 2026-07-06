@@ -128,9 +128,9 @@ body.light.t-dominoes{
   background-image:none;
 }
 body.light.t-yahtzee{
-  --bg:#EEF5FF;--surf:#FFFFFF;--surf2:#DCEBFF;
-  --acc:#1D4ED8;--fg:#FFFFFF;
-  --txt:#CD1919;--muted:#4A6FA0;--bdr:#BBD4F5;
+  --bg:#FFF1EF;--surf:#FFFFFF;--surf2:#FADADA;
+  --acc:#560A0A;--fg:#FFFFFF;
+  --txt:#CD1919;--muted:#CC3C46;--bdr:#F5BEBB;
   --gold:#1D4ED8;--adim:rgba(29,78,216,.22);--divider:rgba(0,0,0,.08);
   background-image:none;
 }
