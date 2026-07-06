@@ -131,7 +131,8 @@ function calcYahtzeeTotals(game) {
       }
     });
     const bonus = upper >= 63 ? 35 : 0;
-    out[id] = { upper, bonus, lower, total: upper + bonus + lower };
+    const yahtzeeBonus = (sc.yahtzeeBonusCount||0) * 100;
+    out[id] = { upper, bonus, lower, yahtzeeBonus, total: upper + bonus + lower + yahtzeeBonus };
   });
   return out;
 }
@@ -805,6 +806,13 @@ function ActiveYahtzeeGame({ game, players, onUpdate, onNewGame, onEndGame, expa
     onUpdate({...game, scores:newScores});
   }
 
+  function adjustYahtzeeBonus(pid, delta) {
+    const cur = game.scores[pid]?.yahtzeeBonusCount || 0;
+    const next = Math.max(0, cur + delta);
+    const newScores = {...game.scores, [pid]: {...game.scores[pid], yahtzeeBonusCount: next}};
+    onUpdate({...game, scores:newScores});
+  }
+
   function handleEndGame() {
     const tots = calcYahtzeeTotals(game);
     const s = [...gp].sort((a,b) => (tots[b.id]?.total||0) - (tots[a.id]?.total||0));
@@ -898,8 +906,16 @@ function ActiveYahtzeeGame({ game, players, onUpdate, onNewGame, onEndGame, expa
                       onChange={e => setScore(p.id, c.key, e.target.value)} />
                   </div>
                 ))}
+                <div className="r-row">
+                  <span>Extra Yahtzees <span style={{color:'var(--muted)',fontWeight:400}}>(×100 each)</span></span>
+                  <div className="ph-ctrl" style={{marginTop:0}}>
+                    <button className="ph-btn minus" onClick={() => adjustYahtzeeBonus(p.id,-1)} disabled={(sc.yahtzeeBonusCount||0)<=0}>-</button>
+                    <div className="ph-badge">{sc.yahtzeeBonusCount||0}</div>
+                    <button className="ph-btn plus" onClick={() => adjustYahtzeeBonus(p.id,1)}>+</button>
+                  </div>
+                </div>
                 <div className="r-row" style={{fontWeight:700}}>
-                  <span>Lower subtotal</span><span>{T[p.id]?.lower||0}</span>
+                  <span>Lower subtotal</span><span>{(T[p.id]?.lower||0) + (T[p.id]?.yahtzeeBonus||0)}</span>
                 </div>
                 <div className="r-row" style={{fontWeight:900,fontSize:15,borderTop:'1.5px solid var(--bdr)',marginTop:4,paddingTop:10}}>
                   <span>GRAND TOTAL</span><span style={{color:'var(--acc)'}}>{tot.toLocaleString()}</span>
