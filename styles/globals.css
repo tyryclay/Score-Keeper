@@ -130,7 +130,7 @@ body.light.t-dominoes{
 body.light.t-yahtzee{
   --bg:#EEF5FF;--surf:#FFFFFF;--surf2:#DCEBFF;
   --acc:#1D4ED8;--fg:#FFFFFF;
-  --txt:#0A1830;--muted:#4A6FA0;--bdr:#BBD4F5;
+  --txt:#CD1919;--muted:#4A6FA0;--bdr:#BBD4F5;
   --gold:#1D4ED8;--adim:rgba(29,78,216,.22);--divider:rgba(0,0,0,.08);
   background-image:none;
 }
