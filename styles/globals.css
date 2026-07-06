@@ -60,7 +60,7 @@ body.t-general{
 body.t-yahtzee{
   --bg:#360404;--surf:#601515;--surf2:#FADADA;
   --acc:##f63b3b;--fg:#FFFFFF;
-  --txt:#CD1919;--CC3C46;--bdr:#F5BEBB;
+  --txt:#CD1919;--muted:#CC3C46;--bdr:#F5BEBB;
   --gold:#93C5FD;--adim:rgba(246,59,59,.4);--divider:rgba(255,255,255,.07);
   background-image:radial-gradient(circle,rgba(59,130,246,.05) 1px,transparent 1px);
   background-size:22px 22px;
