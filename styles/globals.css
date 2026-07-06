@@ -58,10 +58,10 @@ body.t-general{
   background-size:24px 24px;
 }
 body.t-yahtzee{
-  --bg:#0A1830;--surf:#102345;--surf2:#153060;
-  --acc:#3B82F6;--fg:#FFFFFF;
-  --txt:#EAF2FF;--muted:#6B8CBF;--bdr:#1E4080;
-  --gold:#93C5FD;--adim:rgba(59,130,246,.4);--divider:rgba(255,255,255,.07);
+  --bg:#360404;--surf:#601515;-surf2:#FADADA;
+  --acc:##f63b3b;--fg:#FFFFFF;
+  --txt:#CD1919;--CC3C46;--bdr:#F5BEBB;
+  --gold:#93C5FD;--adim:rgba(246,59,59,.4);--divider:rgba(255,255,255,.07);
   background-image:radial-gradient(circle,rgba(59,130,246,.05) 1px,transparent 1px);
   background-size:22px 22px;
 }
