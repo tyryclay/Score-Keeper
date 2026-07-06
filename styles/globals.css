@@ -58,7 +58,7 @@ body.t-general{
   background-size:24px 24px;
 }
 body.t-yahtzee{
-  --bg:#360404;--surf:#601515;-surf2:#FADADA;
+  --bg:#360404;--surf:#601515;--surf2:#FADADA;
   --acc:##f63b3b;--fg:#FFFFFF;
   --txt:#CD1919;--CC3C46;--bdr:#F5BEBB;
   --gold:#93C5FD;--adim:rgba(246,59,59,.4);--divider:rgba(255,255,255,.07);
