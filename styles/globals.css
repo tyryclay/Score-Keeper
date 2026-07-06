@@ -58,11 +58,11 @@ body.t-general{
   background-size:24px 24px;
 }
 body.t-yahtzee{
-  --bg:#1A1400;--surf:#241D00;--surf2:#302600;
-  --acc:#F5C518;--fg:#1A1400;
-  --txt:#FFF8E0;--muted:#9A8040;--bdr:#4A3A00;
-  --gold:#F5C518;--adim:rgba(245,197,24,.4);--divider:rgba(255,255,255,.07);
-  background-image:radial-gradient(circle,rgba(245,197,24,.05) 1px,transparent 1px);
+  --bg:#0A1830;--surf:#102345;--surf2:#153060;
+  --acc:#3B82F6;--fg:#FFFFFF;
+  --txt:#EAF2FF;--muted:#6B8CBF;--bdr:#1E4080;
+  --gold:#93C5FD;--adim:rgba(59,130,246,.4);--divider:rgba(255,255,255,.07);
+  background-image:radial-gradient(circle,rgba(59,130,246,.05) 1px,transparent 1px);
   background-size:22px 22px;
 }
 body.t-dominoes{
@@ -128,10 +128,10 @@ body.light.t-dominoes{
   background-image:none;
 }
 body.light.t-yahtzee{
-  --bg:#FFFBEA;--surf:#FFFFFF;--surf2:#FFF3C4;
-  --acc:#B8860B;--fg:#FFFFFF;
-  --txt:#241D00;--muted:#8A7030;--bdr:#F0DC90;
-  --gold:#7A5A00;--adim:rgba(184,134,11,.22);--divider:rgba(0,0,0,.08);
+  --bg:#EEF5FF;--surf:#FFFFFF;--surf2:#DCEBFF;
+  --acc:#1D4ED8;--fg:#FFFFFF;
+  --txt:#0A1830;--muted:#4A6FA0;--bdr:#BBD4F5;
+  --gold:#1D4ED8;--adim:rgba(29,78,216,.22);--divider:rgba(0,0,0,.08);
   background-image:none;
 }
 body.light .sc-card,body.light .p-card,body.light .rnd-panel,
@@ -235,11 +235,11 @@ body.light .rules-grid{box-shadow:0 1px 4px rgba(0,0,0,.1)}
 .b-dominoes::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 55% at 50% 80%,rgba(245,158,11,.2) 0%,transparent 65%)}
 .dom-word{font-size:38px;font-weight:900;letter-spacing:.16em;position:relative;color:#F59E0B;text-shadow:0 0 28px rgba(245,158,11,.55),0 2px 4px rgba(0,0,0,.9);margin-top:10px}
 /* Yahtzee */
-.b-yahtzee{background:linear-gradient(145deg,#1A1400 0%,#2A2000 60%,#1A1400 100%);border:1px solid #4A3A00}
-.b-yahtzee::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 85% 60% at 50% 0%,rgba(245,197,24,.22) 0%,transparent 70%)}
-.yz-dice{font-size:26px;letter-spacing:10px;position:relative;margin-bottom:8px}
-.yz-word{font-size:46px;font-weight:900;letter-spacing:.06em;position:relative;color:#F5C518;text-shadow:0 0 32px rgba(245,197,24,.6),0 2px 4px rgba(0,0,0,.9)}
-.yz-tag{font-size:10px;letter-spacing:.18em;text-transform:uppercase;margin-top:8px;position:relative;color:rgba(245,197,24,.4)}
+.b-yahtzee{background:linear-gradient(145deg,#0A1830 0%,#122A54 60%,#0A1830 100%);border:1px solid #1E4080}
+.b-yahtzee::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 85% 60% at 50% 0%,rgba(59,130,246,.28) 0%,transparent 70%)}
+.yz-dice{font-size:26px;letter-spacing:10px;position:relative;margin-bottom:8px;color:rgba(255,255,255,.85)}
+.yz-word{font-size:46px;font-weight:900;letter-spacing:.06em;position:relative;color:#FFFFFF;text-shadow:0 0 32px rgba(59,130,246,.75),0 2px 4px rgba(0,0,0,.9)}
+.yz-tag{font-size:10px;letter-spacing:.18em;text-transform:uppercase;margin-top:8px;position:relative;color:rgba(147,197,253,.6)}
 
 /* ── TYPOGRAPHY ─────────────────────────────────────────*/
 .pg-title{font-size:22px;font-weight:900;letter-spacing:-.03em}
