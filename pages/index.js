@@ -795,9 +795,10 @@ function ActiveGame({ gameKey, game, players, onUpdate, onNewGame, onEndGame, sh
 function ActiveYahtzeeGame({ game, players, onUpdate, onNewGame, onEndGame, expandedScores, onToggleScore, onSaveHistory }) {
   const T = calcYahtzeeTotals(game);
   const gp = game.playerIds.map(id => players.find(p=>p.id===id)).filter(Boolean);
-  const sorted = [...gp].sort((a,b) => (T[b.id]?.total||0) - (T[a.id]?.total||0));
   const wp = game.winner ? players.find(p => p.id === game.winner) : null;
   const allFilled = gp.length>0 && gp.every(p => YAHTZEE_CATEGORIES.every(c => typeof (game.scores[p.id]||{})[c.key] === 'number'));
+  const maxTotal = gp.length ? Math.max(...gp.map(p => T[p.id]?.total || 0)) : 0;
+  const leaderId = maxTotal > 0 ? gp.find(p => (T[p.id]?.total||0) === maxTotal)?.id : null;
 
   const [confirm, setConfirm] = useState(null); // null | 'newgame' | 'endgame'
 
@@ -852,17 +853,18 @@ function ActiveYahtzeeGame({ game, players, onUpdate, onNewGame, onEndGame, expa
         </div>
       )}
 
-      {sorted.map((p, idx) => {
-        const isW = game.winner === p.id, isF = idx === 0;
-        const hl = isW || (!game.winner && isF && allFilled);
+      {gp.map((p) => {
+        const isW = game.winner === p.id, isLeader = p.id === leaderId;
+        const hl = isW || (!game.winner && isLeader && allFilled);
         const tot = T[p.id]?.total || 0;
         const pi = players.findIndex(pl => pl.id === p.id);
-        const avBg = hl ? 'var(--acc)' : AV[pi % AV.length];
+        const idColor = AV[pi % AV.length];
+        const avBg = hl ? 'var(--acc)' : idColor;
         const avFg = hl ? 'var(--fg)' : '#fff';
         const isExp = expandedScores[p.id];
         const sc = game.scores[p.id] || {};
         return (
-          <div key={p.id} className={`sc-card${isW?' win':isF&&!game.winner?' lead':''}`}>
+          <div key={p.id} className={`sc-card${isW?' win':isLeader&&!game.winner?' lead':''}`} style={{borderLeft:`4px solid ${idColor}`}}>
             <div className="sc-body">
               <div className="sc-av-wrap">
                 <div style={{width:40,height:40,borderRadius:'50%',background:avBg,color:avFg,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:900,fontSize:17,transition:'background .2s'}}>
@@ -879,48 +881,60 @@ function ActiveYahtzeeGame({ game, players, onUpdate, onNewGame, onEndGame, expa
               <button className="exp-btn" onClick={() => onToggleScore(p.id)}>{isExp?'▲':'▼'}</button>
             </div>
             {isExp && (
-              <div className="hist-panel">
-                <div className="sec-lbl mb8">UPPER SECTION</div>
-                {YAHTZEE_CATEGORIES.filter(c=>c.section==='upper').map(c => (
-                  <div key={c.key} className="r-row">
-                    <span>{c.label}</span>
-                    <input className="num-inp" style={{width:64}} type="text" inputMode="numeric" pattern="[0-9]*"
-                      placeholder="—"
-                      defaultValue={typeof sc[c.key]==='number' ? String(sc[c.key]) : ''}
-                      key={`${p.id}-${c.key}`}
-                      onChange={e => setScore(p.id, c.key, e.target.value)} />
+              <div className="hist-panel yz-panel">
+                <div className="yz-scroll">
+                  <div className="yz-sticky-head" style={{background:idColor}}>
+                    <div style={{width:24,height:24,borderRadius:'50%',background:'rgba(255,255,255,.28)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:900,fontSize:12,color:'#fff',flexShrink:0}}>
+                      {p.name[0].toUpperCase()}
+                    </div>
+                    <span>{p.name}'s scorecard</span>
                   </div>
-                ))}
-                <div className="r-row" style={{fontWeight:700}}>
-                  <span>Upper subtotal</span><span>{T[p.id]?.upper||0}</span>
-                </div>
-                <div className="r-row" style={{fontWeight:700,color: (T[p.id]?.bonus>0) ? 'var(--gold)' : 'var(--muted)'}}>
-                  <span>Bonus (63+ = 35)</span><span>{T[p.id]?.bonus||0}</span>
-                </div>
-                <div className="sec-lbl mb8 mt12">LOWER SECTION</div>
-                {YAHTZEE_CATEGORIES.filter(c=>c.section==='lower').map(c => (
-                  <div key={c.key} className="r-row">
-                    <span>{c.label}{c.hint ? <span style={{color:'var(--muted)',fontWeight:400}}> ({c.hint})</span> : null}</span>
-                    <input className="num-inp" style={{width:64}} type="text" inputMode="numeric" pattern="[0-9]*"
-                      placeholder="—"
-                      defaultValue={typeof sc[c.key]==='number' ? String(sc[c.key]) : ''}
-                      key={`${p.id}-${c.key}`}
-                      onChange={e => setScore(p.id, c.key, e.target.value)} />
+                  <div className="sec-lbl mb8">UPPER SECTION</div>
+                  <div className="yz-cat-grid">
+                    {YAHTZEE_CATEGORIES.filter(c=>c.section==='upper').map(c => (
+                      <div key={c.key} className="yz-cat-cell">
+                        <span>{c.label}</span>
+                        <input className="num-inp" type="text" inputMode="numeric" pattern="[0-9]*"
+                          placeholder="—"
+                          defaultValue={typeof sc[c.key]==='number' ? String(sc[c.key]) : ''}
+                          key={`${p.id}-${c.key}`}
+                          onChange={e => setScore(p.id, c.key, e.target.value)} />
+                      </div>
+                    ))}
                   </div>
-                ))}
-                <div className="r-row">
-                  <span>Extra Yahtzees <span style={{color:'var(--muted)',fontWeight:400}}>(×100 each)</span></span>
-                  <div className="ph-ctrl" style={{marginTop:0}}>
-                    <button className="ph-btn minus" onClick={() => adjustYahtzeeBonus(p.id,-1)} disabled={(sc.yahtzeeBonusCount||0)<=0}>-</button>
-                    <div className="ph-badge">{sc.yahtzeeBonusCount||0}</div>
-                    <button className="ph-btn plus" onClick={() => adjustYahtzeeBonus(p.id,1)}>+</button>
+                  <div className="r-row" style={{fontWeight:700}}>
+                    <span>Upper subtotal</span><span>{T[p.id]?.upper||0}</span>
                   </div>
-                </div>
-                <div className="r-row" style={{fontWeight:700}}>
-                  <span>Lower subtotal</span><span>{(T[p.id]?.lower||0) + (T[p.id]?.yahtzeeBonus||0)}</span>
-                </div>
-                <div className="r-row" style={{fontWeight:900,fontSize:15,borderTop:'1.5px solid var(--bdr)',marginTop:4,paddingTop:10}}>
-                  <span>GRAND TOTAL</span><span style={{color:'var(--acc)'}}>{tot.toLocaleString()}</span>
+                  <div className="r-row" style={{fontWeight:700,color: (T[p.id]?.bonus>0) ? 'var(--gold)' : 'var(--muted)'}}>
+                    <span>Bonus (63+ = 35)</span><span>{T[p.id]?.bonus||0}</span>
+                  </div>
+                  <div className="sec-lbl mb8 mt12">LOWER SECTION</div>
+                  <div className="yz-cat-grid">
+                    {YAHTZEE_CATEGORIES.filter(c=>c.section==='lower').map(c => (
+                      <div key={c.key} className="yz-cat-cell">
+                        <span>{c.label}{c.hint ? <span style={{color:'var(--muted)',fontWeight:400}}> ({c.hint})</span> : null}</span>
+                        <input className="num-inp" type="text" inputMode="numeric" pattern="[0-9]*"
+                          placeholder="—"
+                          defaultValue={typeof sc[c.key]==='number' ? String(sc[c.key]) : ''}
+                          key={`${p.id}-${c.key}`}
+                          onChange={e => setScore(p.id, c.key, e.target.value)} />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="r-row">
+                    <span>Extra Yahtzees <span style={{color:'var(--muted)',fontWeight:400}}>(×100 each)</span></span>
+                    <div className="ph-ctrl" style={{marginTop:0}}>
+                      <button className="ph-btn minus" onClick={() => adjustYahtzeeBonus(p.id,-1)} disabled={(sc.yahtzeeBonusCount||0)<=0}>-</button>
+                      <div className="ph-badge">{sc.yahtzeeBonusCount||0}</div>
+                      <button className="ph-btn plus" onClick={() => adjustYahtzeeBonus(p.id,1)}>+</button>
+                    </div>
+                  </div>
+                  <div className="r-row" style={{fontWeight:700}}>
+                    <span>Lower subtotal</span><span>{(T[p.id]?.lower||0) + (T[p.id]?.yahtzeeBonus||0)}</span>
+                  </div>
+                  <div className="r-row" style={{fontWeight:900,fontSize:15,borderTop:'1.5px solid var(--bdr)',marginTop:4,paddingTop:10}}>
+                    <span>GRAND TOTAL</span><span style={{color:'var(--acc)'}}>{tot.toLocaleString()}</span>
+                  </div>
                 </div>
               </div>
             )}
