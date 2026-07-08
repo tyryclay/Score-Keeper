@@ -887,7 +887,7 @@ function ActiveYahtzeeGame({ game, players, onUpdate, onNewGame, onEndGame, expa
                     <input className="num-inp" style={{width:64}} type="text" inputMode="numeric" pattern="[0-9]*"
                       placeholder="—"
                       defaultValue={typeof sc[c.key]==='number' ? String(sc[c.key]) : ''}
-                      key={`${p.id}-${c.key}-${sc[c.key]}`}
+                      key={`${p.id}-${c.key}`}
                       onChange={e => setScore(p.id, c.key, e.target.value)} />
                   </div>
                 ))}
@@ -904,7 +904,7 @@ function ActiveYahtzeeGame({ game, players, onUpdate, onNewGame, onEndGame, expa
                     <input className="num-inp" style={{width:64}} type="text" inputMode="numeric" pattern="[0-9]*"
                       placeholder="—"
                       defaultValue={typeof sc[c.key]==='number' ? String(sc[c.key]) : ''}
-                      key={`${p.id}-${c.key}-${sc[c.key]}`}
+                      key={`${p.id}-${c.key}`}
                       onChange={e => setScore(p.id, c.key, e.target.value)} />
                   </div>
                 ))}
