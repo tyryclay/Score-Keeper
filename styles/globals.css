@@ -297,6 +297,23 @@ body.light .rules-grid{box-shadow:0 1px 4px rgba(0,0,0,.1)}
 .prog-wrap{height:3px;background:var(--surf2);margin:0 14px 12px;border-radius:2px}
 .prog-fill{height:100%;background:var(--acc);border-radius:2px;transition:width .4s ease,background .2s}
 
+/* ── YAHTZEE SCORECARD (condensed, sticky player header) ─*/
+.yz-panel{padding:0}
+.yz-scroll{max-height:58vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 14px 14px}
+.yz-sticky-head{
+  position:-webkit-sticky;position:sticky;top:0;z-index:5;
+  display:flex;align-items:center;gap:8px;
+  margin:0 -14px 10px;padding:9px 14px;
+  font-size:13px;font-weight:800;color:#fff;letter-spacing:.01em;
+  text-shadow:0 1px 3px rgba(0,0,0,.35);
+}
+.yz-cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px;margin-bottom:4px}
+.yz-cat-cell{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--divider);font-size:12px}
+.yz-cat-cell .num-inp{width:56px;padding:7px 8px;font-size:14px}
+@media(max-width:360px){
+  .yz-cat-grid{grid-template-columns:1fr}
+}
+
 /* ── HISTORY ─────────────────────────────────────────────*/
 .hist-panel{border-top:1px solid var(--bdr);padding:12px 14px}
 .hist-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--divider);font-size:13px}
